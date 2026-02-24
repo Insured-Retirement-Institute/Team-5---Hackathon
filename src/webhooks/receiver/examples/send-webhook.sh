@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 PAYLOAD_FILE="${1:-$SCRIPT_DIR/payload.json}"
-WEBHOOK_URL="${WEBHOOK_URL:-http://localhost:5000/hooks/ats-status}"
+WEBHOOK_URL="${WEBHOOK_URL:-http://localhost:8000/hooks/ats-status}"
 ATS_WEBHOOK_SECRET="${ATS_WEBHOOK_SECRET:-local-dev-shared-secret}"
 
 if [[ ! -f "$PAYLOAD_FILE" ]]; then

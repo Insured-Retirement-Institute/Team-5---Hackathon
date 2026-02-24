@@ -1,19 +1,29 @@
-# ATS Webhook Sender Example (C#)
+# ATS Webhook Sender Example (Python)
 
-Simple console app that signs a webhook payload and sends it to the webhook receiver.
+Simple Python script that signs webhook payloads and sends them to the webhook receiver.
+
+## Prerequisites
+
+- Python 3.12+
+
+## Install dependencies
+
+```bash
+python3 -m pip install -r src/webhooks/sender/requirements.txt
+```
 
 ## Run
 
 ```bash
 ATS_WEBHOOK_SECRET='local-dev-shared-secret' \
-WEBHOOK_URL='http://localhost:5000/hooks/ats-status' \
-dotnet run --project src/webhooks/sender/AtsWebhookSender.Example.csproj
+WEBHOOK_URL='http://localhost:8000/hooks/ats-status' \
+python3 src/webhooks/sender/sender.py
 ```
 
 Optional payload override:
 
 ```bash
-dotnet run --project src/webhooks/sender/AtsWebhookSender.Example.csproj -- src/webhooks/receiver/examples/payload.json
+python3 src/webhooks/sender/sender.py src/webhooks/receiver/examples/payload.json
 ```
 
 ## Inputs
@@ -22,6 +32,9 @@ dotnet run --project src/webhooks/sender/AtsWebhookSender.Example.csproj -- src/
 - `WEBHOOK_URL`: target webhook URL
 - `SENDER_DELAY_MS` (optional): delay before sending request (useful when starting receiver and sender together)
 - `SENDER_AUTO_SEND` (optional): set `true`/`1` to skip Enter confirmation before each send
+- `AWS_SIGN_REQUEST` (optional): set `true`/`1` to SigV4-sign request for IAM-protected endpoints
+- `AWS_REGION` (optional): region used for SigV4 signing (auto-detected from AWS URL when possible)
+- `AWS_SIGV4_SERVICE` (optional): SigV4 service name, default `lambda` (`execute-api` for API Gateway)
 - First CLI argument (optional): payload JSON file path
 
 ## Behavior
@@ -37,3 +50,12 @@ dotnet run --project src/webhooks/sender/AtsWebhookSender.Example.csproj -- src/
 - Sends `POST` with headers:
   - `X-ATS-Event-Id`
   - `X-ATS-Signature`
+
+## Troubleshooting 403 Forbidden
+
+`403` usually means the request is blocked before payload validation:
+
+- Verify `WEBHOOK_URL` path is correct.
+- For IAM-protected Lambda/API Gateway endpoints, set `AWS_SIGN_REQUEST=true` and `AWS_REGION`.
+- For Lambda Function URLs with auth type `NONE`, keep `AWS_SIGN_REQUEST` disabled.
+- On localhost targets, sender runs a startup probe to `GET /health` and warns if the response looks like macOS AirTunes/ControlCenter.

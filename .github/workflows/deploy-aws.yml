@@ -1,4 +1,4 @@
-name: Deploy to AWS Sandbox ECS
+name: Deploy to AWS Sandbox Lambda
 
 on:
   workflow_dispatch:
@@ -9,11 +9,7 @@ permissions:
 
 env:
   AWS_REGION: ${{ vars.SANDBOX_AWS_REGION }}
-  ECR_REPOSITORY: ${{ vars.SANDBOX_ECR_REPOSITORY }}
-  ECS_CLUSTER: ${{ vars.SANDBOX_ECS_CLUSTER }}
-  ECS_SERVICE: ${{ vars.SANDBOX_ECS_SERVICE }}
-  ECS_TASK_FAMILY: ${{ vars.SANDBOX_ECS_TASK_FAMILY }}
-  ECS_CONTAINER_NAME: ${{ vars.SANDBOX_ECS_CONTAINER_NAME }}
+  LAMBDA_FUNCTION_NAME: ${{ vars.SANDBOX_LAMBDA_FUNCTION_NAME }}
 
 jobs:
   deploy-sandbox:
@@ -26,7 +22,7 @@ jobs:
       - name: Validate required repository variables
         run: |
           set -euo pipefail
-          required=(AWS_REGION ECR_REPOSITORY ECS_CLUSTER ECS_SERVICE ECS_TASK_FAMILY ECS_CONTAINER_NAME)
+          required=(AWS_REGION LAMBDA_FUNCTION_NAME)
           for v in "${required[@]}"; do
             if [ -z "${!v:-}" ]; then
               echo "Missing required repository variable: $v"
@@ -40,82 +36,36 @@ jobs:
           role-to-assume: ${{ secrets.SANDBOX_AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-      - name: Ensure ECR repository exists
+      - name: Build Lambda package
         run: |
           set -euo pipefail
-          aws ecr describe-repositories --repository-names "$ECR_REPOSITORY" >/dev/null 2>&1 || \
-          aws ecr create-repository --repository-name "$ECR_REPOSITORY" >/dev/null
+          rm -rf package receiver-lambda.zip
+          mkdir -p package
+          pip install --upgrade pip
+          pip install -r src/webhooks/receiver/requirements.txt -t package
+          cp src/webhooks/receiver/app.py package/
+          cp src/webhooks/receiver/handler.py package/
+          cd package
+          zip -r ../receiver-lambda.zip .
 
-      - name: Build and push image
-        id: build-image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
+      - name: Deploy Lambda code
         run: |
           set -euo pipefail
-          IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-          docker build -f src/webhooks/receiver/Dockerfile -t "$IMAGE_URI" .
-          docker push "$IMAGE_URI"
-          echo "image=$IMAGE_URI" >> "$GITHUB_OUTPUT"
+          aws lambda update-function-code \
+            --function-name "$LAMBDA_FUNCTION_NAME" \
+            --zip-file fileb://receiver-lambda.zip \
+            --publish >/dev/null
 
-      - name: Create updated task definition
-        id: task-def
-        env:
-          IMAGE_URI: ${{ steps.build-image.outputs.image }}
-        run: |
-          set -euo pipefail
-          aws ecs describe-task-definition \
-            --task-definition "$ECS_TASK_FAMILY" \
-            --query taskDefinition > task-definition.json
-
-          jq \
-            --arg IMAGE_URI "$IMAGE_URI" \
-            --arg CONTAINER_NAME "$ECS_CONTAINER_NAME" \
-            'del(
-              .taskDefinitionArn,
-              .revision,
-              .status,
-              .requiresAttributes,
-              .compatibilities,
-              .registeredAt,
-              .registeredBy,
-              .deregisteredAt
-            )
-            | .containerDefinitions = (
-                .containerDefinitions
-                | map(if .name == $CONTAINER_NAME then .image = $IMAGE_URI else . end)
-              )' \
-            task-definition.json > new-task-definition.json
-
-          NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
-            --cli-input-json file://new-task-definition.json \
-            --query 'taskDefinition.taskDefinitionArn' \
-            --output text)
-
-          echo "task_def_arn=$NEW_TASK_DEF_ARN" >> "$GITHUB_OUTPUT"
-
-      - name: Deploy to ECS service
-        env:
-          TASK_DEF_ARN: ${{ steps.task-def.outputs.task_def_arn }}
-        run: |
-          set -euo pipefail
-          aws ecs update-service \
-            --cluster "$ECS_CLUSTER" \
-            --service "$ECS_SERVICE" \
-            --task-definition "$TASK_DEF_ARN" \
-            --force-new-deployment >/dev/null
-
-          aws ecs wait services-stable \
-            --cluster "$ECS_CLUSTER" \
-            --services "$ECS_SERVICE"
+          aws lambda wait function-updated \
+            --function-name "$LAMBDA_FUNCTION_NAME"
 
       - name: Deployment summary
         run: |
-          echo "Deployed image: ${{ steps.build-image.outputs.image }}"
+          echo "Deployed package: receiver-lambda.zip"
           echo "Environment: sandbox"
-          echo "ECS Cluster: $ECS_CLUSTER"
-          echo "ECS Service: $ECS_SERVICE"
+          echo "Lambda Function: $LAMBDA_FUNCTION_NAME"

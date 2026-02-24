@@ -4,60 +4,57 @@
     {
       "name": "Debug Receiver + Sender",
       "configurations": [
-        "Debug ATS Webhook Receiver",
-        "Debug ATS Webhook Sender"
+        "Debug Python Webhook Receiver",
+        "Run Python Webhook Sender"
       ],
       "stopAll": true
     },
     {
       "name": "Debug Receiver + Sender (Delayed)",
       "configurations": [
-        "Debug ATS Webhook Receiver",
-        "Debug ATS Webhook Sender (Delayed)"
+        "Debug Python Webhook Receiver",
+        "Run Python Webhook Sender (Delayed)"
       ],
       "stopAll": true
     }
   ],
   "configurations": [
     {
-      "name": "Debug ATS Webhook Receiver",
-      "type": "coreclr",
+      "name": "Debug Python Webhook Receiver",
+      "type": "python",
       "request": "launch",
-      "preLaunchTask": "build webhook receiver",
-      "program": "${workspaceFolder}/src/webhooks/receiver/bin/Debug/net10.0/AtsWebhookReceiver.dll",
+      "module": "uvicorn",
+      "args": ["app:app", "--host", "0.0.0.0", "--port", "8000", "--reload"],
       "cwd": "${workspaceFolder}/src/webhooks/receiver",
       "env": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
         "ATS_WEBHOOK_SECRET": "local-dev-shared-secret"
       },
       "console": "integratedTerminal",
       "stopAtEntry": false
     },
     {
-      "name": "Debug ATS Webhook Sender",
-      "type": "coreclr",
+      "name": "Run Python Webhook Sender",
+      "type": "python",
       "request": "launch",
-      "preLaunchTask": "build webhook sender",
-      "program": "${workspaceFolder}/src/webhooks/sender/bin/Debug/net10.0/AtsWebhookSender.Example.dll",
+      "program": "${workspaceFolder}/src/webhooks/sender/sender.py",
       "cwd": "${workspaceFolder}",
       "args": ["src/webhooks/receiver/examples/payload.json"],
       "env": {
-        "WEBHOOK_URL": "http://localhost:5000/hooks/ats-status",
+        "WEBHOOK_URL": "http://localhost:8000/hooks/ats-status",
         "ATS_WEBHOOK_SECRET": "local-dev-shared-secret"
       },
       "console": "integratedTerminal",
       "stopAtEntry": false
     },
     {
-      "name": "Debug ATS Webhook Sender (Delayed)",
-      "type": "coreclr",
+      "name": "Run Python Webhook Sender (Delayed)",
+      "type": "python",
       "request": "launch",
-      "preLaunchTask": "build webhook sender",
-      "program": "${workspaceFolder}/src/webhooks/sender/bin/Debug/net10.0/AtsWebhookSender.Example.dll",
+      "program": "${workspaceFolder}/src/webhooks/sender/sender.py",
       "cwd": "${workspaceFolder}",
       "args": ["src/webhooks/receiver/examples/payload.json"],
       "env": {
-        "WEBHOOK_URL": "http://localhost:5000/hooks/ats-status",
+        "WEBHOOK_URL": "http://localhost:8000/hooks/ats-status",
         "ATS_WEBHOOK_SECRET": "local-dev-shared-secret",
         "SENDER_DELAY_MS": "2000"
       },

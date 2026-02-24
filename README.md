@@ -6,29 +6,23 @@ Define description. Test
 
 We are currently in the process of standing up [SwaggerHub](https://wwww.swaggerhub.com) to host OpenAPI definitions. More to come.
 
-## Reference implementation
-
-- C# webhook receiver for transfer status events: [src/webhooks/receiver/README.md](src/webhooks/receiver/README.md)
-- C# webhook sender example: [src/webhooks/sender/README.md](src/webhooks/sender/README.md)
-
-## AWS deployment action
+## AWS deployment action (Sandbox Lambda)
 
 - Workflow: [.github/workflows/deploy-aws.yml](.github/workflows/deploy-aws.yml)
-- Deployment target: **sandbox** Amazon ECS service using an image pushed to Amazon ECR
+- Deployment target: Sandbox AWS Lambda function
 
 Configure GitHub repository settings before running deployment:
 
-- Store the sandbox secret and variables below in repository settings (or a GitHub Environment, if preferred)
-
 - Secret
-  - `SANDBOX_AWS_ROLE_TO_ASSUME`: IAM role ARN for the sandbox account that GitHub Actions can assume via OIDC
+  - `SANDBOX_AWS_ROLE_TO_ASSUME`: IAM role ARN that GitHub Actions can assume via OIDC
 - Variables
   - `SANDBOX_AWS_REGION`: AWS region (example: `us-east-1`)
-  - `SANDBOX_ECR_REPOSITORY`: ECR repository name for the webhook receiver image
-  - `SANDBOX_ECS_CLUSTER`: sandbox ECS cluster name
-  - `SANDBOX_ECS_SERVICE`: sandbox ECS service name
-  - `SANDBOX_ECS_TASK_FAMILY`: sandbox ECS task definition family name
-  - `SANDBOX_ECS_CONTAINER_NAME`: container definition name in the ECS task to update
+  - `SANDBOX_LAMBDA_FUNCTION_NAME`: existing sandbox Lambda function name
+
+## Reference implementation
+
+- Python webhook receiver for transfer status events: [src/webhooks/receiver/README.md](src/webhooks/receiver/README.md)
+- Python webhook sender example: [src/webhooks/sender/README.md](src/webhooks/sender/README.md)
 
 Please refer to the [style guide](https://github.com/Insured-Retirement-Institute/Style-Guide) for technical governance of standards, data dictionary, and the code of conduct.
 
