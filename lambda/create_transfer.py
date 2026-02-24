@@ -1,10 +1,25 @@
 import json
 import os
+import urllib.request
 
 import boto3
 
 dynamodb = boto3.resource("dynamodb")
 table = dynamodb.Table(os.environ["TRANSFERS_TABLE"])
+
+FORWARD_API_URL = os.environ.get("FORWARD_API_URL")
+
+
+def forward_to_api(body):
+    data = json.dumps(body).encode("utf-8")
+    req = urllib.request.Request(
+        FORWARD_API_URL,
+        data=data,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(req) as response:
+        return response.status, response.read().decode("utf-8")
 
 
 def lambda_handler(event, context):
@@ -75,6 +90,8 @@ def lambda_handler(event, context):
     item = {k: v for k, v in item.items() if v is not None}
 
     table.put_item(Item=item)
+
+    forward_to_api(body)
 
     return {
         "statusCode": 201,

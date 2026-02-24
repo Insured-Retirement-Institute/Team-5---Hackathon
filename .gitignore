@@ -404,3 +404,4 @@ FodyWeavers.xsd
 samconfig.toml
 template.yaml
 .aws-sam/
+test.txt
