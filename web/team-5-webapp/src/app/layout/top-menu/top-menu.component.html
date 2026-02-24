@@ -1,0 +1,27 @@
+<nav class="top-menu">
+  <div class="nav-left">
+    <a class="logo" routerLink="/book-of-business" title="Current IMO">
+      <img src="/images/CurrentIMOLogo.png" alt="" width="36" height="36" class="logo-img" />
+      <span class="logo-text">Current IMO</span>
+    </a>
+    <div class="nav-divider"></div>
+    <div class="nav-links">
+        <a routerLink="/book-of-business" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: false }">
+          Book of Business
+        </a>
+    @if (auth.currentUser()?.role === 'imo') {
+      <a routerLink="/loi-requests" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: false }">
+        LOI Requests
+      </a>
+    }
+    </div>
+  </div>
+  <button type="button" class="logout-btn" (click)="logout()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+      <polyline points="16 17 21 12 16 7"/>
+      <line x1="21" y1="12" x2="9" y2="12"/>
+    </svg>
+    Log out
+  </button>
+</nav>
