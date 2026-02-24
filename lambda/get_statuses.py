@@ -25,22 +25,29 @@ def lambda_handler(event, context):
                 "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Headers": "Content-Type,Idempotency-Key",
             },
-            "body": json.dumps({"error": {"code": "MISSING_FEIN", "message": "fein path parameter is required"}}),
+            "body": json.dumps(
+                {
+                    "error": {
+                        "code": "MISSING_FEIN",
+                        "message": "fein path parameter is required",
+                    }
+                }
+            ),
         }
 
-    response = table.query(
-        KeyConditionExpression=Key("ReceivingFein").eq(fein)
-    )
+    response = table.query(KeyConditionExpression=Key("ReceivingFein").eq(fein))
 
     items = []
     for status in response["Items"]:
         npn = status.get("npn")
         agent = get_agent(npn) if npn else None
-        items.append({
-            **status,
-            "agentFirstName": agent.get("firstName") if agent else None,
-            "agentLastName": agent.get("lastName") if agent else None,
-        })
+        items.append(
+            {
+                **status,
+                "agentFirstName": agent.get("firstName") if agent else None,
+                "agentLastName": agent.get("lastName") if agent else None,
+            }
+        )
 
     return {
         "statusCode": 200,

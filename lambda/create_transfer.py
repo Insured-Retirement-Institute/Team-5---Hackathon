@@ -1,5 +1,6 @@
 import json
 import os
+import urllib.error
 import urllib.request
 
 import boto3
@@ -19,8 +20,15 @@ def forward_to_api(body):
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    with urllib.request.urlopen(req) as response:
-        return response.status, response.read().decode("utf-8")
+    try:
+        with urllib.request.urlopen(req) as response:
+            return None, response.read().decode("utf-8")
+    except urllib.error.HTTPError as e:
+        return e.status, e.read().decode("utf-8")
+    except urllib.error.URLError as e:
+        return 502, json.dumps(
+            {"error": {"code": "FORWARD_FAILED", "message": str(e.reason)}}
+        )
 
 
 def lambda_handler(event, context):
@@ -99,7 +107,17 @@ def lambda_handler(event, context):
         agent_record["lastName"] = agent_last_name
     agent_table.put_item(Item=agent_record)
 
-    forward_to_api(body)
+    error_status, forward_body = forward_to_api(body)
+    if error_status is not None:
+        return {
+            "statusCode": error_status,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "Content-Type,Idempotency-Key",
+            },
+            "body": forward_body,
+        }
 
     return {
         "statusCode": 201,

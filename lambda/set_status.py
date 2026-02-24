@@ -16,17 +16,21 @@ def lambda_handler(event, context):
 
     receiving_fein = body.get("receivingFein")  # Required: partition key
     releasing_fein = body.get("releasingFein")  # Required
-    carrier_id     = body.get("carrierId")      # Required: sort key
-    status         = body.get("status")         # Required
-    npn            = body.get("npn")            # Required: agent National Producer Number
+    carrier_id = body.get("carrierId")  # Required: sort key
+    status = body.get("status")  # Required
+    npn = body.get("npn")  # Required: agent National Producer Number
 
-    missing = [f for f, v in {
-        "receivingFein": receiving_fein,
-        "releasingFein": releasing_fein,
-        "carrierId":     carrier_id,
-        "status":        status,
-        "npn":           npn,
-    }.items() if not v]
+    missing = [
+        f
+        for f, v in {
+            "receivingFein": receiving_fein,
+            "releasingFein": releasing_fein,
+            "carrierId": carrier_id,
+            "status": status,
+            "npn": npn,
+        }.items()
+        if not v
+    ]
 
     if missing:
         return {
@@ -36,12 +40,14 @@ def lambda_handler(event, context):
                 "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Headers": "Content-Type,Idempotency-Key",
             },
-            "body": json.dumps({
-                "error": {
-                    "code": "MISSING_FIELDS",
-                    "message": f"Missing required fields: {', '.join(missing)}",
+            "body": json.dumps(
+                {
+                    "error": {
+                        "code": "MISSING_FIELDS",
+                        "message": f"Missing required fields: {', '.join(missing)}",
+                    }
                 }
-            }),
+            ),
         }
 
     if status not in VALID_STATUSES:
@@ -52,21 +58,25 @@ def lambda_handler(event, context):
                 "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Headers": "Content-Type,Idempotency-Key",
             },
-            "body": json.dumps({
-                "error": {
-                    "code": "INVALID_STATUS",
-                    "message": f"Invalid status '{status}'. Must be one of: {', '.join(sorted(VALID_STATUSES))}",
+            "body": json.dumps(
+                {
+                    "error": {
+                        "code": "INVALID_STATUS",
+                        "message": f"Invalid status '{status}'. Must be one of: {', '.join(sorted(VALID_STATUSES))}",
+                    }
                 }
-            }),
+            ),
         }
 
-    table.put_item(Item={
-        "ReceivingFein": receiving_fein,
-        "ReleasingFein": releasing_fein,
-        "carrierId":     carrier_id,
-        "status":        status,
-        "npn":           npn,
-    })
+    table.put_item(
+        Item={
+            "ReceivingFein": receiving_fein,
+            "ReleasingFein": releasing_fein,
+            "carrierId": carrier_id,
+            "status": status,
+            "npn": npn,
+        }
+    )
 
     return {
         "statusCode": 200,
@@ -75,11 +85,13 @@ def lambda_handler(event, context):
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Headers": "Content-Type,Idempotency-Key",
         },
-        "body": json.dumps({
-            "receivingFein": receiving_fein,
-            "releasingFein": releasing_fein,
-            "carrierId":     carrier_id,
-            "status":        status,
-            "npn":           npn,
-        }),
+        "body": json.dumps(
+            {
+                "receivingFein": receiving_fein,
+                "releasingFein": releasing_fein,
+                "carrierId": carrier_id,
+                "status": status,
+                "npn": npn,
+            }
+        ),
     }

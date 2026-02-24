@@ -185,7 +185,7 @@ paths:
                   receivingFein: "98-7654321"
                   releasingFein: "12-3456789"
                   carrierId: "carrier_001"
-                  status: "ACTIVE"
+                  status: "PENDING"
                   npn: "17439285"
       responses:
         '200':
@@ -224,7 +224,7 @@ paths:
                     - receivingFein: "98-7654321"
                       releasingFein: "12-3456789"
                       carrierId: "carrier_001"
-                      status: "ACTIVE"
+                      status: "PENDING"
                       npn: "17439285"
         '400':
           description: Missing fein parameter
