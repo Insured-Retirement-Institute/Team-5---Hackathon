@@ -81,6 +81,8 @@ def lambda_handler(event, context):
         "headers": {
             "Content-Type": "application/json",
             "Location": f"/ats/transfers/{key}",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "Content-Type,Idempotency-Key",
         },
         "body": json.dumps({"id": key, "state": "SUBMITTED"}),
     }

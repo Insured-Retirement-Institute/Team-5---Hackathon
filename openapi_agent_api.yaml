@@ -12,6 +12,8 @@ servers:
 tags:
   - name: Transfers
     description: Agent transfer lifecycle endpoints (MVP)
+  - name: Status
+    description: Carrier status endpoints
 
 paths:
   /ats/transfers:
@@ -163,6 +165,69 @@ paths:
               schema: { $ref: '#/components/schemas/Error' }
         '404':
           description: Transfer not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /ats/status:
+    post:
+      tags: [Status]
+      summary: Set carrier status for a FEIN
+      operationId: setStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/StatusSetRequest' }
+            examples:
+              example:
+                value:
+                  receivingFein: "98-7654321"
+                  releasingFein: "12-3456789"
+                  carrierId: "carrier_001"
+                  status: "ACTIVE"
+                  npn: "17439285"
+      responses:
+        '200':
+          description: Status set successfully
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StatusRecord' }
+        '400':
+          description: Missing or invalid fields
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /ats/status/{fein}:
+    get:
+      tags: [Status]
+      summary: Get all carrier statuses for a receiving FEIN
+      operationId: getStatuses
+      parameters:
+        - in: path
+          name: fein
+          required: true
+          schema: { type: string }
+          description: Receiving FEIN to look up statuses for
+      responses:
+        '200':
+          description: List of carrier statuses for the given FEIN
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/StatusRecord' }
+              examples:
+                example:
+                  value:
+                    - receivingFein: "98-7654321"
+                      releasingFein: "12-3456789"
+                      carrierId: "carrier_001"
+                      status: "ACTIVE"
+                      npn: "17439285"
+        '400':
+          description: Missing fein parameter
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
@@ -322,6 +387,37 @@ components:
           properties:
             code: { type: string }
             message: { type: string }
+
+    # ===== Status =====
+    StatusSetRequest:
+      type: object
+      required: [receivingFein, releasingFein, carrierId, status, npn]
+      properties:
+        receivingFein:
+          type: string
+          description: FEIN of the receiving IMO (partition key)
+        releasingFein:
+          type: string
+          description: FEIN of the releasing IMO
+        carrierId:
+          type: string
+          description: Carrier identifier (sort key)
+        status:
+          type: string
+          description: Status value for this carrier (e.g. ACTIVE, PENDING, INACTIVE)
+        npn:
+          type: string
+          description: National Producer Number of the agent
+
+    StatusRecord:
+      type: object
+      required: [receivingFein, releasingFein, carrierId, status, npn]
+      properties:
+        receivingFein: { type: string }
+        releasingFein: { type: string }
+        carrierId:     { type: string }
+        status:        { type: string }
+        npn:           { type: string }
 
 security:
   # Placeholder; for MVP demos you can disable auth.
