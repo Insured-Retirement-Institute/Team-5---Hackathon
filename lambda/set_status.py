@@ -68,9 +68,12 @@ def lambda_handler(event, context):
             ),
         }
 
+    status_key = f"{carrier_id}#{npn}#{releasing_fein}"
+
     table.put_item(
         Item={
             "ReceivingFein": receiving_fein,
+            "statusKey": status_key,
             "ReleasingFein": releasing_fein,
             "carrierId": carrier_id,
             "status": status,
