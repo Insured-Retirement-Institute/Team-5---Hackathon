@@ -6,6 +6,7 @@ import boto3
 
 dynamodb = boto3.resource("dynamodb")
 table = dynamodb.Table(os.environ["TRANSFERS_TABLE"])
+agent_table = dynamodb.Table(os.environ["AGENT_TABLE"])
 
 FORWARD_API_URL = os.environ.get("FORWARD_API_URL")
 
@@ -90,6 +91,13 @@ def lambda_handler(event, context):
     item = {k: v for k, v in item.items() if v is not None}
 
     table.put_item(Item=item)
+
+    agent_record = {"npn": agent_npn}
+    if agent_first_name:
+        agent_record["firstName"] = agent_first_name
+    if agent_last_name:
+        agent_record["lastName"] = agent_last_name
+    agent_table.put_item(Item=agent_record)
 
     forward_to_api(body)
 
