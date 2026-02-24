@@ -362,7 +362,7 @@ components:
           description: Standardized requirement code (e.g., AML_CURRENT, E_AND_O_VALID)
         status:
           type: string
-          enum: [OPEN, SATISFIED, WAIVED, REJECTED]
+          enum: [PENDING, COMPLETED, CANCELED, REJECTED]
         details:
           type: string
           description: Optional human-readable details (e.g., expiry date)
@@ -404,7 +404,8 @@ components:
           description: Carrier identifier (sort key)
         status:
           type: string
-          description: Status value for this carrier (e.g. ACTIVE, PENDING, INACTIVE)
+          enum: [PENDING, COMPLETED, CANCELED, REJECTED]
+          description: Status value for this carrier
         npn:
           type: string
           description: National Producer Number of the agent
@@ -416,7 +417,9 @@ components:
         receivingFein: { type: string }
         releasingFein: { type: string }
         carrierId:     { type: string }
-        status:        { type: string }
+        status:
+          type: string
+          enum: [PENDING, COMPLETED, CANCELED, REJECTED]
         npn:           { type: string }
 
 security:

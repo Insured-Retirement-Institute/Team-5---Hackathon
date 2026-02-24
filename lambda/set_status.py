@@ -3,8 +3,12 @@ import os
 
 import boto3
 
+from status import Status
+
 dynamodb = boto3.resource("dynamodb")
 table = dynamodb.Table(os.environ["STATUS_TABLE"])
+
+VALID_STATUSES = {s.name for s in Status}
 
 
 def lambda_handler(event, context):
@@ -36,6 +40,22 @@ def lambda_handler(event, context):
                 "error": {
                     "code": "MISSING_FIELDS",
                     "message": f"Missing required fields: {', '.join(missing)}",
+                }
+            }),
+        }
+
+    if status not in VALID_STATUSES:
+        return {
+            "statusCode": 400,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "Content-Type,Idempotency-Key",
+            },
+            "body": json.dumps({
+                "error": {
+                    "code": "INVALID_STATUS",
+                    "message": f"Invalid status '{status}'. Must be one of: {', '.join(sorted(VALID_STATUSES))}",
                 }
             }),
         }
