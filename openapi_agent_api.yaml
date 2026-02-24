@@ -1,10 +1,12 @@
-openapi: 3.0.3
+openapi: 3.1.0
 info:
   title: Agent Transfer Standard (ATS) — IMO-to-Carrier MVP API
   version: 0.1.0
   description: |
     Minimal carrier-hosted API for Agent/IMO-initiated transfers.
     Scope: Create a transfer, check status, cancel, and (optionally) list.
+    Includes webhook subscription and delivery contract for transfer status updates
+    sent by a centralized transfer hub.
 
 servers:
   - url: https://api.carrier.example.com
@@ -12,6 +14,8 @@ servers:
 tags:
   - name: Transfers
     description: Agent transfer lifecycle endpoints (MVP)
+  - name: Webhooks
+    description: Webhook subscription management for transfer status updates
 
 paths:
   /ats/transfers:
@@ -27,19 +31,19 @@ paths:
         - in: query
           name: state
           schema:
-            $ref: '#/components/schemas/TransferState'
+            $ref: "#/components/schemas/TransferState"
           description: Optional state filter
         - in: query
           name: limit
           schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
       responses:
-        '200':
+        "200":
           description: Paged list (MVP returns a simple array)
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/TransferSummary' }
+                items: { $ref: "#/components/schemas/TransferSummary" }
 
     post:
       tags: [Transfers]
@@ -55,18 +59,19 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/TransferCreateRequest' }
+            schema: { $ref: "#/components/schemas/TransferCreateRequest" }
             examples:
               minimal:
                 summary: Minimal creation
                 value:
-                  agent: { npn: "17439285", firstName: "Jordan", lastName: "Lee" }
+                  agent:
+                    { npn: "17439285", firstName: "Jordan", lastName: "Lee" }
                   releasingImo: { fein: "12-3456789", name: "Acme IMO" }
                   receivingImo: { fein: "98-7654321", name: "Summit IMO" }
                   effectiveDate: "2026-03-01"
                   consent: { agentAttestation: true, eSignatureRef: "esig_123" }
       responses:
-        '201':
+        "201":
           description: Created
           headers:
             Location:
@@ -74,20 +79,20 @@ paths:
               schema: { type: string }
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/TransferCreateResponse' }
+              schema: { $ref: "#/components/schemas/TransferCreateResponse" }
               examples:
                 created:
                   value: { id: "tr_abc123", state: "SUBMITTED" }
-        '400':
+        "400":
           description: Invalid request payload
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Error' }
-        '409':
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
           description: Conflict (e.g., duplicate active transfer for this agent+carrier)
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Error' }
+              schema: { $ref: "#/components/schemas/Error" }
 
   /ats/transfers/{id}:
     get:
@@ -100,17 +105,18 @@ paths:
           required: true
           schema: { type: string }
       responses:
-        '200':
+        "200":
           description: Transfer found
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Transfer' }
+              schema: { $ref: "#/components/schemas/Transfer" }
               examples:
                 example:
                   value:
                     id: "tr_abc123"
                     state: "VALIDATION"
-                    agent: { npn: "17439285", firstName: "Jordan", lastName: "Lee" }
+                    agent:
+                      { npn: "17439285", firstName: "Jordan", lastName: "Lee" }
                     releasingImo: { fein: "12-3456789", name: "Acme IMO" }
                     receivingImo: { fein: "98-7654321", name: "Summit IMO" }
                     effectiveDate: "2026-03-01"
@@ -125,11 +131,11 @@ paths:
                         from: "SUBMITTED"
                         to: "VALIDATION"
                         at: "2026-02-22T18:01:03Z"
-        '404':
+        "404":
           description: Transfer not found
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Error' }
+              schema: { $ref: "#/components/schemas/Error" }
 
     patch:
       tags: [Transfers]
@@ -144,28 +150,139 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/TransferPatchRequest' }
+            schema: { $ref: "#/components/schemas/TransferPatchRequest" }
             examples:
               cancel:
                 value: { action: "CANCEL", reason: "Agent request" }
               add_note:
-                value: { action: "ADD_NOTE", note: "Please complete before month-end." }
+                value:
+                  {
+                    action: "ADD_NOTE",
+                    note: "Please complete before month-end.",
+                  }
       responses:
-        '200':
+        "200":
           description: Updated transfer
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Transfer' }
-        '400':
+              schema: { $ref: "#/components/schemas/Transfer" }
+        "400":
           description: Bad action or invalid state for action
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Error' }
-        '404':
+              schema: { $ref: "#/components/schemas/Error" }
+        "404":
           description: Transfer not found
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Error' }
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /ats/webhook-subscriptions:
+    post:
+      tags: [Webhooks]
+      summary: Register webhook endpoint for transfer status updates
+      operationId: createWebhookSubscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              { $ref: "#/components/schemas/WebhookSubscriptionCreateRequest" }
+            examples:
+              default:
+                value:
+                  callbackUrl: "https://partner.example.com/hooks/ats-status"
+                  events: ["transfer.status.updated"]
+                  active: true
+      responses:
+        "201":
+          description: Webhook subscription created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WebhookSubscription" }
+        "400":
+          description: Invalid callback URL or event selection
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+    get:
+      tags: [Webhooks]
+      summary: List active webhook subscriptions
+      operationId: listWebhookSubscriptions
+      responses:
+        "200":
+          description: Webhook subscriptions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/WebhookSubscription" }
+
+  /ats/webhook-subscriptions/{id}:
+    delete:
+      tags: [Webhooks]
+      summary: Delete webhook subscription
+      operationId: deleteWebhookSubscription
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Subscription not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+webhooks:
+  transferStatusUpdated:
+    post:
+      summary: Centralized hub posts transfer status updates to subscriber callback URL
+      description: |
+        The centralized transfer hub sends this event to registered callback URLs whenever
+        a transfer changes state.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TransferStatusUpdateEvent" }
+            examples:
+              status_changed:
+                value:
+                  eventId: "evt_01J91S3M7N8AQ5KQ9QETQJ8B2R"
+                  eventType: "transfer.status.updated"
+                  occurredAt: "2026-02-24T20:09:12Z"
+                  source: "centralized-hub"
+                  data:
+                    transferId: "tr_abc123"
+                    previousState: "VALIDATION"
+                    state: "PROCESSING"
+                    reasonCodes: ["ALL_REQUIREMENTS_SATISFIED"]
+                    npn: "17439285"
+      parameters:
+        - in: header
+          name: X-ATS-Signature
+          required: true
+          description: HMAC SHA-256 signature of request body using subscription secret
+          schema: { type: string }
+        - in: header
+          name: X-ATS-Event-Id
+          required: true
+          description: Event id for idempotency/deduplication
+          schema: { type: string }
+      responses:
+        "200":
+          description: Event processed
+        "202":
+          description: Accepted for asynchronous processing
+        "400":
+          description: Invalid payload
+        "401":
+          description: Invalid signature
 
 components:
   schemas:
@@ -175,11 +292,11 @@ components:
       required: [agent, releasingImo, receivingImo, effectiveDate, consent]
       properties:
         agent:
-          $ref: '#/components/schemas/AgentRef'
+          $ref: "#/components/schemas/AgentRef"
         releasingImo:
-          $ref: '#/components/schemas/OrgRef'
+          $ref: "#/components/schemas/OrgRef"
         receivingImo:
-          $ref: '#/components/schemas/OrgRef'
+          $ref: "#/components/schemas/OrgRef"
         effectiveDate:
           type: string
           format: date
@@ -213,21 +330,65 @@ components:
           type: string
           description: Optional human-readable reason (e.g., for CANCEL)
 
+    WebhookSubscriptionCreateRequest:
+      type: object
+      required: [callbackUrl]
+      properties:
+        callbackUrl:
+          type: string
+          format: uri
+          description: HTTPS endpoint that receives transfer status events
+        events:
+          type: array
+          description: Event types the subscriber wants to receive
+          minItems: 1
+          items:
+            type: string
+            enum: [transfer.status.updated]
+          default: [transfer.status.updated]
+        active:
+          type: boolean
+          default: true
+
+    WebhookSubscription:
+      type: object
+      required: [id, callbackUrl, events, active, createdAt]
+      properties:
+        id:
+          type: string
+          description: Server-assigned subscription id
+        callbackUrl:
+          type: string
+          format: uri
+        events:
+          type: array
+          items:
+            type: string
+            enum: [transfer.status.updated]
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        secretHint:
+          type: string
+          description: Partial value to identify the webhook signing secret
+
     # ===== Responses & Resources =====
     TransferCreateResponse:
       type: object
       required: [id, state]
       properties:
         id: { type: string, description: Server-assigned transfer id }
-        state: { $ref: '#/components/schemas/TransferState' }
+        state: { $ref: "#/components/schemas/TransferState" }
 
     TransferSummary:
       type: object
       required: [id, state, agent]
       properties:
         id: { type: string }
-        state: { $ref: '#/components/schemas/TransferState' }
-        agent: { $ref: '#/components/schemas/AgentRef' }
+        state: { $ref: "#/components/schemas/TransferState" }
+        agent: { $ref: "#/components/schemas/AgentRef" }
         effectiveDate: { type: string, format: date }
 
     Transfer:
@@ -235,21 +396,21 @@ components:
       required: [id, state, agent, releasingImo, receivingImo]
       properties:
         id: { type: string }
-        state: { $ref: '#/components/schemas/TransferState' }
+        state: { $ref: "#/components/schemas/TransferState" }
         reasons:
           type: array
           items: { type: string }
           description: Machine-readable reasons for current state (e.g., failed validation codes)
-        agent: { $ref: '#/components/schemas/AgentRef' }
-        releasingImo: { $ref: '#/components/schemas/OrgRef' }
-        receivingImo: { $ref: '#/components/schemas/OrgRef' }
+        agent: { $ref: "#/components/schemas/AgentRef" }
+        releasingImo: { $ref: "#/components/schemas/OrgRef" }
+        receivingImo: { $ref: "#/components/schemas/OrgRef" }
         effectiveDate: { type: string, format: date }
         requirements:
           type: array
-          items: { $ref: '#/components/schemas/Requirement' }
+          items: { $ref: "#/components/schemas/Requirement" }
         audit:
           type: array
-          items: { $ref: '#/components/schemas/AuditEvent' }
+          items: { $ref: "#/components/schemas/AuditEvent" }
         links:
           type: array
           items:
@@ -257,6 +418,44 @@ components:
             properties:
               rel: { type: string }
               href: { type: string }
+
+    TransferStatusUpdateEvent:
+      type: object
+      required: [eventId, eventType, occurredAt, source, data]
+      properties:
+        eventId:
+          type: string
+          description: Globally unique event id
+        eventType:
+          type: string
+          enum: [transfer.status.updated]
+        occurredAt:
+          type: string
+          format: date-time
+        source:
+          type: string
+          example: centralized-hub
+        data:
+          type: object
+          required: [transferId, state]
+          properties:
+            transferId: { type: string }
+            npn:
+              type: string
+              description: Agent NPN for correlation on subscriber side
+            previousState:
+              $ref: "#/components/schemas/TransferState"
+            state:
+              $ref: "#/components/schemas/TransferState"
+            reasonCodes:
+              type: array
+              items: { type: string }
+            statusMessage:
+              type: string
+              maxLength: 1000
+            effectiveDate:
+              type: string
+              format: date
 
     # ===== Supporting Types =====
     TransferState:
@@ -276,7 +475,7 @@ components:
           type: string
           description: National Producer Number (unique industry identifier)
         firstName: { type: string }
-        lastName:  { type: string }
+        lastName: { type: string }
 
     OrgRef:
       type: object
@@ -306,11 +505,21 @@ components:
       type: object
       required: [event, at]
       properties:
-        event: { type: string, description: Event name, e.g., ats.transfer.state.changed }
-        at:    { type: string, format: date-time }
-        from:  { type: string, description: Previous state (if state change) }
-        to:    { type: string, description: New state (if state change) }
-        actor: { type: string, description: SYSTEM | IMO | CARRIER_USER (optional in MVP) }
+        event:
+          {
+            type: string,
+            description: Event name,
+            e.g.,
+            ats.transfer.state.changed,
+          }
+        at: { type: string, format: date-time }
+        from: { type: string, description: Previous state (if state change) }
+        to: { type: string, description: New state (if state change) }
+        actor:
+          {
+            type: string,
+            description: SYSTEM | IMO | CARRIER_USER (optional in MVP),
+          }
 
     Error:
       type: object

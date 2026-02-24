@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/webhooks/" />
+  <Folder Name="/src/webhooks/receiver.tests/">
+    <Project Path="src/webhooks/receiver.tests/AtsWebhookReceiver.Tests.csproj" />
+  </Folder>
+  <Folder Name="/src/webhooks/receiver/">
+    <Project Path="src/webhooks/receiver/AtsWebhookReceiver.csproj" />
+  </Folder>
+  <Folder Name="/src/webhooks/sender/">
+    <Project Path="src/webhooks/sender/AtsWebhookSender.Example.csproj" />
+  </Folder>
+</Solution>

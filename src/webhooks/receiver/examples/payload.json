@@ -1,0 +1,13 @@
+{
+  "eventId": "evt_local_001",
+  "eventType": "transfer.status.updated",
+  "occurredAt": "2026-02-24T20:09:12Z",
+  "source": "centralized-hub",
+  "data": {
+    "transferId": "tr_abc123",
+    "previousState": "VALIDATION",
+    "state": "PROCESSING",
+    "reasonCodes": ["ALL_REQUIREMENTS_SATISFIED"],
+    "npn": "17439285"
+  }
+}

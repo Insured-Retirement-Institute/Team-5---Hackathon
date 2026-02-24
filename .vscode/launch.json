@@ -1,0 +1,68 @@
+{
+  "version": "0.2.0",
+  "compounds": [
+    {
+      "name": "Debug Receiver + Sender",
+      "configurations": [
+        "Debug ATS Webhook Receiver",
+        "Debug ATS Webhook Sender"
+      ],
+      "stopAll": true
+    },
+    {
+      "name": "Debug Receiver + Sender (Delayed)",
+      "configurations": [
+        "Debug ATS Webhook Receiver",
+        "Debug ATS Webhook Sender (Delayed)"
+      ],
+      "stopAll": true
+    }
+  ],
+  "configurations": [
+    {
+      "name": "Debug ATS Webhook Receiver",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build webhook receiver",
+      "program": "${workspaceFolder}/src/webhooks/receiver/bin/Debug/net10.0/AtsWebhookReceiver.dll",
+      "cwd": "${workspaceFolder}/src/webhooks/receiver",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ATS_WEBHOOK_SECRET": "local-dev-shared-secret"
+      },
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Debug ATS Webhook Sender",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build webhook sender",
+      "program": "${workspaceFolder}/src/webhooks/sender/bin/Debug/net10.0/AtsWebhookSender.Example.dll",
+      "cwd": "${workspaceFolder}",
+      "args": ["src/webhooks/receiver/examples/payload.json"],
+      "env": {
+        "WEBHOOK_URL": "http://localhost:5000/hooks/ats-status",
+        "ATS_WEBHOOK_SECRET": "local-dev-shared-secret"
+      },
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Debug ATS Webhook Sender (Delayed)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build webhook sender",
+      "program": "${workspaceFolder}/src/webhooks/sender/bin/Debug/net10.0/AtsWebhookSender.Example.dll",
+      "cwd": "${workspaceFolder}",
+      "args": ["src/webhooks/receiver/examples/payload.json"],
+      "env": {
+        "WEBHOOK_URL": "http://localhost:5000/hooks/ats-status",
+        "ATS_WEBHOOK_SECRET": "local-dev-shared-secret",
+        "SENDER_DELAY_MS": "2000"
+      },
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    }
+  ]
+}

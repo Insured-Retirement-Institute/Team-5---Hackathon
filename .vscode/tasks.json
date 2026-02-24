@@ -1,0 +1,27 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build webhook receiver",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/src/webhooks/receiver/AtsWebhookReceiver.csproj"
+      ],
+      "group": "build",
+      "problemMatcher": ["$msCompile"]
+    },
+    {
+      "label": "build webhook sender",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/src/webhooks/sender/AtsWebhookSender.Example.csproj"
+      ],
+      "group": "build",
+      "problemMatcher": ["$msCompile"]
+    }
+  ]
+}

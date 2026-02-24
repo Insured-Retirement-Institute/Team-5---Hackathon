@@ -1,0 +1,18 @@
+@baseUrl = http://localhost:5000
+@eventId = evt_local_001
+@signature = 781c4f8286b07b0f5b7bf54f1be270aae9e7cc19438c16688358f1ad423c10b3
+
+### Health check
+GET {{baseUrl}}/health
+
+### Webhook call (signed)
+# 1) Start receiver in debug/run mode.
+# 2) Run updater script to refresh @eventId and @signature from payload.json:
+#    ./src/webhooks/receiver/examples/update-webhook-http.sh
+# 3) Send this request.
+POST {{baseUrl}}/hooks/ats-status
+Content-Type: application/json
+X-ATS-Event-Id: {{eventId}}
+X-ATS-Signature: sha256={{signature}}
+
+< ./payload.json
