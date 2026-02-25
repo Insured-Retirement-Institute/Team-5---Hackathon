@@ -398,3 +398,10 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# Dev Container
+.devcontainer/
+samconfig.toml
+.aws-sam/
+test.txt
+.venv

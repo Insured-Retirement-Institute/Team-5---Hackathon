@@ -1,0 +1,673 @@
+openapi: 3.0.3
+info:
+  title: Agent Transfer Standard (ATS) — IMO-to-Carrier MVP API
+  version: 0.1.0
+  description: |
+    Minimal carrier-hosted API for Agent/IMO-initiated transfers.
+    Scope: Create a transfer, check status, cancel, and (optionally) list.
+
+servers:
+  - url: https://api.carrier.example.com
+
+tags:
+  - name: Transfers
+    description: Agent transfer lifecycle endpoints (MVP)
+  - name: Status
+    description: Carrier status endpoints
+  - name: Agents
+    description: Agent transfer eligibility, carrier requirements, and book-of-business endpoints
+
+paths:
+  /ats/transfers:
+    get:
+      tags: [Transfers]
+      summary: List transfers (basic filter)
+      operationId: listTransfers
+      parameters:
+        - in: query
+          name: npn
+          schema: { type: string }
+          description: Optional agent NPN to filter results
+        - in: query
+          name: state
+          schema:
+            $ref: "#/components/schemas/TransferState"
+          description: Optional state filter
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+      responses:
+        "200":
+          description: Paged list (MVP returns a simple array)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/TransferSummary" }
+
+    post:
+      tags: [Transfers]
+      summary: Create a new agent transfer
+      operationId: createTransfer
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: false
+          description: Idempotency key to safely retry POST without duplicates
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TransferCreateRequest" }
+            examples:
+              minimal:
+                summary: Minimal creation
+                value:
+                  agent:
+                    { npn: "17439285", firstName: "Jordan", lastName: "Lee" }
+                  releasingImo: { fein: "12-3456789", name: "Acme IMO" }
+                  receivingImo: { fein: "98-7654321", name: "Summit IMO" }
+                  effectiveDate: "2026-03-01"
+                  consent: { agentAttestation: true, eSignatureRef: "esig_123" }
+      responses:
+        "201":
+          description: Created
+          headers:
+            Location:
+              description: URL of the newly created transfer resource
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TransferCreateResponse" }
+              examples:
+                created:
+                  value: { id: "tr_abc123", state: "SUBMITTED" }
+        "400":
+          description: Invalid request payload
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: Conflict (e.g., duplicate active transfer for this agent+carrier)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /ats/transfers/{id}:
+    get:
+      tags: [Transfers]
+      summary: Get transfer details by id
+      operationId: getTransfer
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Transfer found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Transfer" }
+              examples:
+                example:
+                  value:
+                    id: "tr_abc123"
+                    state: "VALIDATION"
+                    agent:
+                      { npn: "17439285", firstName: "Jordan", lastName: "Lee" }
+                    releasingImo: { fein: "12-3456789", name: "Acme IMO" }
+                    receivingImo: { fein: "98-7654321", name: "Summit IMO" }
+                    effectiveDate: "2026-03-01"
+                    requirements:
+                      - code: "AML_CURRENT"
+                        status: "SATISFIED"
+                      - code: "E_AND_O_VALID"
+                        status: "OPEN"
+                        details: "Exp 2026-02-28"
+                    audit:
+                      - event: "ats.transfer.state.changed"
+                        from: "SUBMITTED"
+                        to: "VALIDATION"
+                        at: "2026-02-22T18:01:03Z"
+        "404":
+          description: Transfer not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+    patch:
+      tags: [Transfers]
+      summary: Update a transfer (cancel or add a note)
+      operationId: patchTransfer
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TransferPatchRequest" }
+            examples:
+              cancel:
+                value: { action: "CANCEL", reason: "Agent request" }
+              add_note:
+                value:
+                  {
+                    action: "ADD_NOTE",
+                    note: "Please complete before month-end.",
+                  }
+      responses:
+        "200":
+          description: Updated transfer
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Transfer" }
+        "400":
+          description: Bad action or invalid state for action
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404":
+          description: Transfer not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /ats/status:
+    post:
+      tags: [Status]
+      summary: Set carrier status for a FEIN
+      operationId: setStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StatusSetRequest" }
+            examples:
+              example:
+                value:
+                  receivingFein: "98-7654321"
+                  releasingFein: "12-3456789"
+                  carrierId: "carrier_001"
+                  status: "PENDING"
+                  npn: "17439285"
+      responses:
+        "200":
+          description: Status set successfully
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StatusRecord" }
+        "400":
+          description: Missing or invalid fields
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /ats/status/{fein}:
+    get:
+      tags: [Status]
+      summary: Get all carrier statuses for a receiving FEIN
+      operationId: getStatuses
+      parameters:
+        - in: path
+          name: fein
+          required: true
+          schema: { type: string }
+          description: Receiving FEIN to look up statuses for
+      responses:
+        "200":
+          description: List of carrier statuses for the given FEIN
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/StatusRecord" }
+              examples:
+                example:
+                  value:
+                    - receivingFein: "98-7654321"
+                      releasingFein: "12-3456789"
+                      carrierId: "carrier_001"
+                      status: "PENDING"
+                      npn: "17439285"
+        "400":
+          description: Missing fein parameter
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /ats/agents:
+    get:
+      tags: [Agents]
+      summary: List agents available for IMO transfer workflows
+      operationId: listAgents
+      parameters:
+        - in: query
+          name: receivingImoFein
+          required: false
+          schema: { type: string }
+          description: Optional FEIN to exclude agents already in that receiving IMO
+      responses:
+        "200":
+          description: Agent list including carriers and book of business
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AgentListItem" }
+
+  /ats/agents/{npn}/validate:
+    get:
+      tags: [Agents]
+      summary: Get transfer requirements and payload contract for an agent
+      operationId: getAgentTransfer
+      parameters:
+        - in: path
+          name: npn
+          required: true
+          schema: { type: string }
+          description: Agent NPN
+      responses:
+        "200":
+          description: Agent transfer context with carriers, requirements, and book of business
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AgentTransferContext" }
+        "400":
+          description: Missing npn path parameter
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404":
+          description: Agent not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+    post:
+      tags: [Agents]
+      summary: Validate transfer payload generated from agent transfer context
+      operationId: validateAgentTransfer
+      parameters:
+        - in: path
+          name: npn
+          required: true
+          schema: { type: string }
+          description: Agent NPN
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AgentTransferSubmission" }
+      responses:
+        "200":
+          description: Payload is valid
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [valid, agentNpn, message]
+                properties:
+                  valid: { type: boolean, enum: [true] }
+                  agentNpn: { type: string }
+                  message: { type: string }
+        "400":
+          description: Payload failed validation
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [valid, errors]
+                properties:
+                  valid: { type: boolean, enum: [false] }
+                  errors:
+                    type: array
+                    items: { type: string }
+        "404":
+          description: Agent not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+components:
+  schemas:
+    # ===== Requests =====
+    TransferCreateRequest:
+      type: object
+      required: [agent, releasingImo, receivingImo, effectiveDate, consent]
+      properties:
+        agent:
+          $ref: "#/components/schemas/AgentRef"
+        releasingImo:
+          $ref: "#/components/schemas/OrgRef"
+        receivingImo:
+          $ref: "#/components/schemas/OrgRef"
+        effectiveDate:
+          type: string
+          format: date
+          description: Target date for hierarchy/commission realignment
+        consent:
+          type: object
+          required: [agentAttestation]
+          properties:
+            agentAttestation:
+              type: boolean
+              description: True if the agent has authorized this transfer
+            eSignatureRef:
+              type: string
+              description: Reference to an e-signature artifact (opaque to carrier)
+        notes:
+          type: string
+          maxLength: 2000
+          description: Optional free text for carrier processing
+
+    TransferPatchRequest:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [CANCEL, ADD_NOTE]
+        note:
+          type: string
+          description: Used when action=ADD_NOTE
+        reason:
+          type: string
+          description: Optional human-readable reason (e.g., for CANCEL)
+
+    # ===== Responses & Resources =====
+    TransferCreateResponse:
+      type: object
+      required: [id, state]
+      properties:
+        id: { type: string, description: Server-assigned transfer id }
+        state: { $ref: "#/components/schemas/TransferState" }
+
+    TransferSummary:
+      type: object
+      required: [id, state, agent]
+      properties:
+        id: { type: string }
+        state: { $ref: "#/components/schemas/TransferState" }
+        agent: { $ref: "#/components/schemas/AgentRef" }
+        effectiveDate: { type: string, format: date }
+
+    Transfer:
+      type: object
+      required: [id, state, agent, releasingImo, receivingImo]
+      properties:
+        id: { type: string }
+        state: { $ref: "#/components/schemas/TransferState" }
+        reasons:
+          type: array
+          items: { type: string }
+          description: Machine-readable reasons for current state (e.g., failed validation codes)
+        agent: { $ref: "#/components/schemas/AgentRef" }
+        releasingImo: { $ref: "#/components/schemas/OrgRef" }
+        receivingImo: { $ref: "#/components/schemas/OrgRef" }
+        effectiveDate: { type: string, format: date }
+        requirements:
+          type: array
+          items: { $ref: "#/components/schemas/Requirement" }
+        audit:
+          type: array
+          items: { $ref: "#/components/schemas/AuditEvent" }
+        links:
+          type: array
+          items:
+            type: object
+            properties:
+              rel: { type: string }
+              href: { type: string }
+
+    # ===== Supporting Types =====
+    TransferState:
+      type: string
+      enum: [SUBMITTED, VALIDATION, PROCESSING, COMPLETED, REJECTED, WITHDRAWN]
+      description: |
+        MVP state machine:
+          SUBMITTED → VALIDATION → PROCESSING → COMPLETED
+                                  └───────────→ REJECTED
+        WITHDRAWN indicates an IMO/Agent-initiated cancel.
+
+    AgentRef:
+      type: object
+      required: [npn]
+      properties:
+        npn:
+          type: string
+          description: National Producer Number (unique industry identifier)
+        firstName: { type: string }
+        lastName: { type: string }
+
+    OrgRef:
+      type: object
+      required: [fein, name]
+      properties:
+        fein:
+          type: string
+          description: Business FEIN for the IMO
+        name:
+          type: string
+
+    Requirement:
+      type: object
+      required: [code, status]
+      properties:
+        code:
+          type: string
+          description: Standardized requirement code (e.g., AML_CURRENT, E_AND_O_VALID)
+        status:
+          type: string
+          enum: [PENDING, COMPLETED, CANCELED, REJECTED]
+        details:
+          type: string
+          description: Optional human-readable details (e.g., expiry date)
+
+    AuditEvent:
+      type: object
+      required: [event, at]
+      properties:
+        event:
+          {
+            type: string,
+            description: Event name,
+            e.g.,
+            ats.transfer.state.changed,
+          }
+        at: { type: string, format: date-time }
+        from: { type: string, description: Previous state (if state change) }
+        to: { type: string, description: New state (if state change) }
+        actor:
+          {
+            type: string,
+            description: SYSTEM | IMO | CARRIER_USER (optional in MVP),
+          }
+
+    AgentListItem:
+      type: object
+      required: [npn, firstName, lastName, carriers, bookOfBusiness]
+      properties:
+        npn: { type: string }
+        firstName: { type: string }
+        lastName: { type: string }
+        currentImo:
+          $ref: "#/components/schemas/OrgRef"
+        carriers:
+          type: array
+          items: { $ref: "#/components/schemas/AgentCarrierSummary" }
+        bookOfBusiness:
+          type: array
+          items: { $ref: "#/components/schemas/BookOfBusinessSummary" }
+
+    AgentTransferContext:
+      type: object
+      required: [agent, carriers, bookOfBusiness, requiredSubmissionPayload]
+      properties:
+        agent:
+          type: object
+          required: [npn, firstName, lastName, currentImo]
+          properties:
+            npn: { type: string }
+            firstName: { type: string }
+            lastName: { type: string }
+            currentImo: { $ref: "#/components/schemas/OrgRef" }
+        carriers:
+          type: array
+          items: { $ref: "#/components/schemas/AgentCarrierDetail" }
+        bookOfBusiness:
+          type: array
+          items: { $ref: "#/components/schemas/BookOfBusinessSummary" }
+        requiredSubmissionPayload:
+          $ref: "#/components/schemas/AgentTransferSubmission"
+
+    AgentCarrierSummary:
+      type: object
+      required: [carrierId, carrierName, licensed]
+      properties:
+        carrierId: { type: string }
+        carrierName: { type: string }
+        licensed: { type: boolean }
+
+    AgentCarrierDetail:
+      allOf:
+        - $ref: "#/components/schemas/AgentCarrierSummary"
+        - type: object
+          required: [requirements]
+          properties:
+            requirements:
+              $ref: "#/components/schemas/CarrierTransferRequirements"
+
+    CarrierTransferRequirements:
+      type: object
+      required:
+        [
+          requiresReleaseLetter,
+          requiresSignedTransferPacket,
+          minimumDaysInCurrentHierarchy,
+        ]
+      properties:
+        requiresReleaseLetter: { type: boolean }
+        requiresSignedTransferPacket: { type: boolean }
+        minimumDaysInCurrentHierarchy:
+          type: integer
+          minimum: 0
+
+    BookOfBusinessSummary:
+      type: object
+      required: [bookId, carrierId, policyCount, annualizedPremium]
+      properties:
+        bookId: { type: string }
+        carrierId: { type: string }
+        policyCount:
+          type: integer
+          minimum: 0
+        annualizedPremium:
+          type: number
+          format: double
+
+    AgentTransferSubmission:
+      type: object
+      required:
+        [
+          agentNpn,
+          targetImo,
+          selectedCarrierIds,
+          selectedBookIds,
+          effectiveDate,
+          requirementAnswers,
+          attestation,
+        ]
+      properties:
+        agentNpn:
+          type: string
+          description: Must match the {npn} in path
+        targetImo:
+          $ref: "#/components/schemas/OrgRef"
+        selectedCarrierIds:
+          type: array
+          minItems: 1
+          items: { type: string }
+        selectedBookIds:
+          type: array
+          minItems: 1
+          items: { type: string }
+        effectiveDate:
+          type: string
+          format: date
+        requirementAnswers:
+          type: object
+          required:
+            [
+              releaseLetterProvided,
+              signedTransferPacketProvided,
+              daysInCurrentHierarchy,
+            ]
+          properties:
+            releaseLetterProvided: { type: boolean }
+            signedTransferPacketProvided: { type: boolean }
+            daysInCurrentHierarchy:
+              type: integer
+              minimum: 0
+        attestation:
+          type: object
+          required: [agentApproved, acknowledgedAt]
+          properties:
+            agentApproved: { type: boolean }
+            acknowledgedAt:
+              type: string
+              format: date-time
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string }
+            message: { type: string }
+
+    # ===== Status =====
+    StatusSetRequest:
+      type: object
+      required: [receivingFein, releasingFein, carrierId, status, npn]
+      properties:
+        receivingFein:
+          type: string
+          description: FEIN of the receiving IMO (partition key)
+        releasingFein:
+          type: string
+          description: FEIN of the releasing IMO
+        carrierId:
+          type: string
+          description: Carrier identifier (sort key)
+        status:
+          type: string
+          enum: [PENDING, COMPLETED, CANCELED, REJECTED]
+          description: Status value for this carrier
+        npn:
+          type: string
+          description: National Producer Number of the agent
+
+    StatusRecord:
+      type: object
+      required: [receivingFein, releasingFein, carrierId, status, npn]
+      properties:
+        receivingFein: { type: string }
+        releasingFein: { type: string }
+        carrierId: { type: string }
+        status:
+          type: string
+          enum: [PENDING, COMPLETED, CANCELED, REJECTED]
+        npn: { type: string }
+
+security:
+  # Placeholder; for MVP demos you can disable auth.
+  # In production, use OAuth2 Client Credentials or AWS SigV4/mTLS between IMO and carrier.
+  - {}

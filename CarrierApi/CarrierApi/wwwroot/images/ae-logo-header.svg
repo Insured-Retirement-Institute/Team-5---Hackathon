@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 50" fill="white">
+  <rect x="0" y="0" width="50" height="50" fill="white" opacity="0.15" rx="4"/>
+  <text x="25" y="35" font-family="Arial, sans-serif" font-size="28" font-weight="bold" text-anchor="middle">AE</text>
+  <text x="65" y="22" font-family="Arial, sans-serif" font-size="16" font-weight="300">American</text>
+  <text x="65" y="38" font-family="Arial, sans-serif" font-size="16" font-weight="300">Equity</text>
+</svg>
