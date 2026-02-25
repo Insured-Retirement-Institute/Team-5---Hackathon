@@ -1,8 +1,8 @@
 {
   "agentNpn": "222",
   "targetImo": {
-    "name": "Atlas IMO Partners",
-    "fein": "88-1122334"
+    "name": "Advisors Excel",
+    "fein": "98-7654321"
   },
   "selectedCarrierIds": ["allianz", "american-equity"],
   "selectedBookIds": ["bob_1002_A", "bob_1002_B"],

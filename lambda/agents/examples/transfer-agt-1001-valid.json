@@ -1,7 +1,7 @@
 {
   "agentNpn": "111",
   "targetImo": {
-    "name": "Summit IMO",
+    "name": "Advisors Excel",
     "fein": "98-7654321"
   },
   "selectedCarrierIds": ["allianz"],
