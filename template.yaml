@@ -115,7 +115,7 @@ Resources:
         Variables:
           TRANSFERS_TABLE: !Ref TransfersTable
           AGENT_TABLE: !Ref AgentTable
-          FORWARD_API_URL: "https://plwlku50il.execute-api.us-east-1.amazonaws.com/prod/ats/transfers"  # TODO: set to the target API URL
+          FORWARD_API_URL: "https://9hsm1zr6c9.execute-api.us-east-1.amazonaws.com/prod/ats/transfers"  # TODO: set to the target API URL
       Policies:
         - DynamoDBWritePolicy:
             TableName: !Ref TransfersTable
