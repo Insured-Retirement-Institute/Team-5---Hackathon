@@ -115,8 +115,8 @@ Resources:
         Variables:
           TRANSFERS_TABLE: !Ref TransfersTable
           AGENT_TABLE: !Ref AgentTable
-          FORWARD_API_URL_ALLIANZ: "https://5rbq3p8cfc.execute-api.us-east-1.amazonaws.com/ats/transfers"  # TODO: set to the target API URL
-          FORWARD_API_URL_AE: "https://ah51s1wom5.execute-api.us-east-1.amazonaws.com/ats/transfers"  # TODO: set to the target API URL
+          FORWARD_API_URL_ALLIANZ: "https://mj8skppu81.execute-api.us-east-1.amazonaws.com/ats/transfers"  # TODO: set to the target API URL
+          FORWARD_API_URL_AE: "https://9f6yrhcul7.execute-api.us-east-1.amazonaws.com/ats/transfers"  # TODO: set to the target API URL
           SET_STATUS_URL: "https://21yem0s5jl.execute-api.us-east-1.amazonaws.com/prod/ats/status"
       Policies:
         - DynamoDBWritePolicy:
