@@ -136,6 +136,12 @@ Resources:
       CodeUri: lambda/
       Handler: get_transfer.lambda_handler
       Description: GET /ats/transfers/{id} — Get transfer details by id
+      Environment:
+        Variables:
+          TRANSFERS_TABLE: !Ref TransfersTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref TransfersTable
       Events:
         GetTransfer:
           Type: Api
