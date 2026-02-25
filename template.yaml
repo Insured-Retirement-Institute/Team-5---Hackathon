@@ -1,0 +1,247 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/aws/serverless-application-model/main/samtranslator/schema/schema.json
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Agent Transfer Standard (ATS) API
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: python3.12
+
+Resources:
+
+  TransfersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Transfers
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true
+
+  ContractsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Contracts
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true
+
+  AgentTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Agents
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: npn
+          AttributeType: S
+      KeySchema:
+        - AttributeName: npn
+          KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true
+
+  StatusTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: receivingFein
+          AttributeType: S
+        - AttributeName: statusKey
+          AttributeType: S
+      KeySchema:
+        - AttributeName: receivingFein
+          KeyType: HASH
+        - AttributeName: statusKey
+          KeyType: RANGE
+      SSESpecification:
+        SSEEnabled: true
+
+  AtsApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Description: Agent Transfer Standard (ATS) API
+      Cors:
+        AllowOrigin: "'*'"
+        AllowHeaders: "'Content-Type,Idempotency-Key'"
+        AllowMethods: "'GET,POST,PATCH,OPTIONS'"
+      GatewayResponses:
+        DEFAULT_4XX:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: "'*'"
+              Access-Control-Allow-Headers: "'Content-Type,Idempotency-Key'"
+        DEFAULT_5XX:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: "'*'"
+              Access-Control-Allow-Headers: "'Content-Type,Idempotency-Key'"
+
+  ListTransfersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/
+      Handler: list_transfers.lambda_handler
+      Description: GET /ats/transfers — List transfers with optional npn/state/limit filters
+      Events:
+        ListTransfers:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AtsApi
+            Path: /ats/transfers
+            Method: GET
+
+  CreateTransferFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/
+      Handler: create_transfer.lambda_handler
+      Description: POST /ats/transfers — Create a new agent transfer
+      Environment:
+        Variables:
+          TRANSFERS_TABLE: !Ref TransfersTable
+          AGENT_TABLE: !Ref AgentTable
+          FORWARD_API_URL: "https://plwlku50il.execute-api.us-east-1.amazonaws.com/prod/ats/transfers"  # TODO: set to the target API URL
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref TransfersTable
+        - DynamoDBWritePolicy:
+            TableName: !Ref AgentTable
+      Events:
+        CreateTransfer:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AtsApi
+            Path: /ats/transfers
+            Method: POST
+
+  GetTransferFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/
+      Handler: get_transfer.lambda_handler
+      Description: GET /ats/transfers/{id} — Get transfer details by id
+      Events:
+        GetTransfer:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AtsApi
+            Path: /ats/transfers/{id}
+            Method: GET
+
+  PatchTransferFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/
+      Handler: patch_transfer.lambda_handler
+      Description: PATCH /ats/transfers/{id} — Cancel or add a note to a transfer
+      Events:
+        PatchTransfer:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AtsApi
+            Path: /ats/transfers/{id}
+            Method: PATCH
+
+  SetStatusFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/
+      Handler: set_status.lambda_handler
+      Description: POST /ats/status — Set carrier status for a FEIN
+      Environment:
+        Variables:
+          STATUS_TABLE: !Ref StatusTable
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref StatusTable
+      Events:
+        SetStatus:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AtsApi
+            Path: /ats/status
+            Method: POST
+
+  GetStatusesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/
+      Handler: get_statuses.lambda_handler
+      Description: GET /ats/status/{fein} — Get all carrier statuses for a receiving FEIN
+      Environment:
+        Variables:
+          STATUS_TABLE: !Ref StatusTable
+          AGENT_TABLE: !Ref AgentTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref StatusTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref AgentTable
+      Events:
+        GetStatuses:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AtsApi
+            Path: /ats/status/{fein}
+            Method: GET
+
+  GetContractsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/
+      Handler: get_contracts.lambda_handler
+      Description: GET /ats/contracts/{fein} — Get all contracts for a FEIN
+      Environment:
+        Variables:
+          CONTRACTS_TABLE: !Ref ContractsTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ContractsTable
+      Events:
+        GetContracts:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AtsApi
+            Path: /ats/contracts/{fein}
+            Method: GET
+
+  UpdateContractsFeinFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/
+      Handler: update_contracts_fein.lambda_handler
+      Description: POST /ats/contracts/update-fein — Update contract FEINs by carrierId/npn/releasingFein
+      Environment:
+        Variables:
+          CONTRACTS_TABLE: !Ref ContractsTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ContractsTable
+        - DynamoDBWritePolicy:
+            TableName: !Ref ContractsTable
+      Events:
+        UpdateContractsFein:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AtsApi
+            Path: /ats/contracts/update-fein
+            Method: POST
+
+Outputs:
+  AtsApiUrl:
+    Description: ATS API base URL
+    Value: !Sub "https://${AtsApi}.execute-api.${AWS::Region}.amazonaws.com/prod"

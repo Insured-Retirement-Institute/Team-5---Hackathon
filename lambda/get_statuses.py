@@ -35,7 +35,7 @@ def lambda_handler(event, context):
             ),
         }
 
-    response = table.query(KeyConditionExpression=Key("ReceivingFein").eq(fein))
+    response = table.query(KeyConditionExpression=Key("receivingFein").eq(fein))
 
     items = []
     for status in response["Items"]:
