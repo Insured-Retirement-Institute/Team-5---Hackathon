@@ -1,10 +1,14 @@
 import json
+import logging
 import os
 import urllib.request
 
 import boto3
 
 from status import Status
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 UPDATE_CONTRACTS_FEIN_URL = os.environ.get("UPDATE_CONTRACTS_FEIN_URL")
 
@@ -24,6 +28,11 @@ def lambda_handler(event, context):
     npn = body.get("npn")  # Required: agent National Producer Number
     requirements = body.get("requirements")  # Optional: list of {code, status, details}
 
+    logger.info(
+        "set_status called receivingFein=%s releasingFein=%s carrierId=%s status=%s npn=%s",
+        receiving_fein, releasing_fein, carrier_id, status, npn,
+    )
+
     missing = [
         f
         for f, v in {
@@ -37,6 +46,7 @@ def lambda_handler(event, context):
     ]
 
     if missing:
+        logger.error("Missing required fields: %s", missing)
         return {
             "statusCode": 400,
             "headers": {
@@ -55,6 +65,7 @@ def lambda_handler(event, context):
         }
 
     if status not in VALID_STATUSES:
+        logger.error("Invalid status '%s'. Valid statuses: %s", status, sorted(VALID_STATUSES))
         return {
             "statusCode": 400,
             "headers": {
@@ -85,9 +96,12 @@ def lambda_handler(event, context):
     if requirements is not None:
         item["requirements"] = requirements
 
+    logger.info("Writing status to DynamoDB statusKey=%s", status_key)
     table.put_item(Item=item)
+    logger.info("Status written successfully")
 
     if status == "COMPLETED" and UPDATE_CONTRACTS_FEIN_URL:
+        logger.info("Status is COMPLETED, calling update_contracts_fein url=%s", UPDATE_CONTRACTS_FEIN_URL)
         payload = json.dumps({
             "carrierId": carrier_id,
             "npn": npn,
@@ -100,7 +114,11 @@ def lambda_handler(event, context):
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        urllib.request.urlopen(req)
+        try:
+            urllib.request.urlopen(req)
+            logger.info("update_contracts_fein called successfully")
+        except Exception as e:
+            logger.error("update_contracts_fein failed: %s", str(e))
 
     return {
         "statusCode": 200,

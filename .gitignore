@@ -405,3 +405,4 @@ samconfig.toml
 .aws-sam/
 test.txt
 .venv
+/CarrierApi/hosting/set-creds.bat
