@@ -15,7 +15,7 @@ public class AtsHubClient(HttpClient client, AtsHubSettings settings) : IAtsHubC
     {
         ArgumentNullException.ThrowIfNull(status);
 
-        const string route = $"ats/status";
+        const string route = $"ats/v1/status";
         status.CarrierId = settings.CarrierId;
         var options = new JsonSerializerOptions
         {
