@@ -1,0 +1,28 @@
+--IMO TO HUB
+curl -X POST https://21yem0s5jl.execute-api.us-east-1.amazonaws.com/prod/ats/transfers -H "Content-Type: application/json" -H "Idempotency-Key: test-key-001" -d '{"agent":{"npn":"17439285","firstName":"Jordan","lastName":"Lee"},"releasingImo":{"fein":"13-3456789","name":"Acme IMO"},"receivingImo":{"fein":"99-7654321","name":"Summit IMO"},"effectiveDate":"2026-03-01","consent":{"agentAttestation":true,"eSignatureRef":"esig_abc123"},"notes":"Please process before month-end."}'
+
+
+--HUB TO CARRIER
+curl -X POST https://j69x07aw5d.execute-api.us-east-1.amazonaws.com/prod/ats/transfers -H "Content-Type: application/json" -H "Idempotency-Key: test-key-001" -d '{"agent":{"npn":"9873459","firstName":"Jordan","lastName":"Lee"},"releasingImo":{"fein":"13-3456789","name":"Acme IMO"},"receivingImo":{"fein":"99-7654321","name":"Summit IMO"},"effectiveDate":"2026-03-01","consent":{"agentAttestation":true,"eSignatureRef":"esig_abc123"},"notes":"Please process before month-end."}'
+
+
+--SET STATUS
+curl -X POST https://21yem0s5jl.execute-api.us-east-1.amazonaws.com/prod/ats/status \
+  -H "Content-Type: application/json" \
+  -d '{
+    "receivingFein": "98-7654321",
+    "releasingFein": "12-3456789",
+    "carrierId": "carrier_001",
+    "status": "PENDING",
+    "npn": "17439285"
+  }'
+
+--get statuses
+curl https://21yem0s5jl.execute-api.us-east-1.amazonaws.com/prod/ats/status/22-2222222
+
+--get contracts
+curl -X GET "https://21yem0s5jl.execute-api.us-east-1.amazonaws.com/prod/ats/contracts/12-3456789" -H "Content-Type: application/json"
+
+--update contracts
+curl -X POST "https://21yem0s5jl.execute-api.us-east-1.amazonaws.com/prod/ats/contracts/update-fein" -H "Content-Type: application/json" -d '{"carrierId":"carrier_001","npn":"111","releasingFein":"12-3456789","receivingFein":"33-3333333"}'
+

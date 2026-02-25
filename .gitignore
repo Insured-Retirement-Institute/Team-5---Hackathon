@@ -403,4 +403,3 @@ FodyWeavers.xsd
 .devcontainer/
 samconfig.toml
 .aws-sam/
-test.txt
