@@ -402,6 +402,5 @@ FodyWeavers.xsd
 # Dev Container
 .devcontainer/
 samconfig.toml
-template.yaml
 .aws-sam/
 test.txt

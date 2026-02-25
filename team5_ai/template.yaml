@@ -1,0 +1,197 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Bedrock Agent with an action group that forwards requests to the
+  existing carrier API at API_BASE_URL.
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: python3.12
+
+Resources:
+
+  # ── 1. IAM role for the Lambda function ──────────────────────────────────
+  ActionGroupLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-ActionGroupLambdaRole"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  # ── 2. Lambda function ────────────────────────────────────────────────────
+  ActionGroupLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-ActionGroupLambda"
+      CodeUri: lambda/
+      Handler: handler.lambda_handler
+      Role: !GetAtt ActionGroupLambdaRole.Arn
+      Environment:
+        Variables:
+          API_BASE_URL: "https://21yem0s5jl.execute-api.us-east-1.amazonaws.com/prod"
+
+  # ── 3. Permission for Bedrock to invoke the Lambda ────────────────────────
+  BedrockLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt ActionGroupLambda.Arn
+      Action: lambda:InvokeFunction
+      Principal: bedrock.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+      SourceArn: !Sub "arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:agent/*"
+
+  # ── 4. IAM role for the Bedrock Agent ────────────────────────────────────
+  BedrockAgentRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-BedrockAgentRole"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: bedrock.amazonaws.com
+            Action: sts:AssumeRole
+            Condition:
+              ArnLike:
+                aws:SourceArn: !Sub "arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:agent/*"
+      Policies:
+        - PolicyName: BedrockAgentPermissions
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: BedrockFullAccess
+                Effect: Allow
+                Action: bedrock:*
+                Resource: "*"
+              - Sid: ReadApiSpec
+                Effect: Allow
+                Action: s3:GetObject
+                Resource: arn:aws:s3:::team5-api-spec/*
+              - Sid: InvokeLambda
+                Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt ActionGroupLambda.Arn
+
+  # ── 5. Bedrock Agent ──────────────────────────────────────────────────────
+  BedrockAgent:
+    Type: AWS::Bedrock::Agent
+    Properties:
+      AgentName: !Sub "${AWS::StackName}-Agent"
+      AgentResourceRoleArn: !GetAtt BedrockAgentRole.Arn
+      FoundationModel: "us.amazon.nova-pro-v1:0"
+      Description: "Bedrock agent using action group defined in team5-api-spec/test2.yaml"
+      Instruction: >
+        You are a helpful assistant that manages agent transfers between IMOs (Independent Marketing Organizations).
+        Use the available action group to fulfill user requests.
+        Only call actions when you have all required parameters.
+
+        You can perform the following operations:
+        - List transfers: retrieve all transfers, optionally filtered by an agent NPN, state, or limit.
+          Use this when the user asks to see, list, or check transfers — even without a specific ID.
+        - Get a single transfer: retrieve one transfer by its ID. Transfer IDs have the format receivingFein|releasingFein|npn (e.g. "123456|098875|44444").
+        - Create a transfer: submit a new agent transfer request.
+        - Update a transfer: cancel a transfer or add a note to it.
+
+        Field mapping rules you MUST follow when calling actions:
+        - An agent is identified by their NPN (National Producer Number). Always include npn. If the user provides a first name or last name, you MUST include firstName and lastName in the agent object.
+        - An IMO (releasing or receiving) requires two fields: fein (the IMO's tax ID / FEIN number) and name (the IMO's company name).
+          If the user provides an "IMO number" or "FEIN", map it to the fein field.
+          If the user does not provide an IMO name, ask for it before proceeding.
+        - consent must include agentAttestation set to true, meaning the agent has authorized the transfer.
+          Always set agentAttestation to true when the user confirms they have consent.
+        - effectiveDate must be in YYYY-MM-DD format.
+      IdleSessionTTLInSeconds: 900
+      AutoPrepare: true
+      ActionGroups:
+        - ActionGroupName: Team5ActionGroup
+          Description: "Action group backed by the OpenAPI spec at s3://team5-api-spec/test2.yaml"
+          ActionGroupState: ENABLED
+          ActionGroupExecutor:
+            Lambda: !GetAtt ActionGroupLambda.Arn
+          ApiSchema:
+            S3:
+              S3BucketName: team5-api-spec
+              S3ObjectKey: test2.yaml
+
+  # ── 6. IAM role for the Web App Lambda ───────────────────────────────────
+  WebAppRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-WebAppRole"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: InvokeBedrockAgent
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: bedrock:InvokeAgent
+                Resource: !Sub "arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:agent-alias/${BedrockAgent.AgentId}/*"
+
+  # ── 7. Web App Lambda (Flask + Mangum) ───────────────────────────────────
+  WebAppFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-WebApp"
+      CodeUri: webapp/
+      Handler: app.handler
+      Role: !GetAtt WebAppRole.Arn
+      Timeout: 60
+      Environment:
+        Variables:
+          AGENT_ID: !GetAtt BedrockAgent.AgentId
+          AGENT_ALIAS_ID: "TSTALIASID"
+          FLASK_SECRET_KEY: !Sub "${AWS::StackName}-flask-secret"
+      Events:
+        Root:
+          Type: HttpApi
+          Properties:
+            Path: /
+            Method: ANY
+        Proxy:
+          Type: HttpApi
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+
+  # ── 8. Agent Alias ────────────────────────────────────────────────────────
+  BedrockAgentAlias:
+    Type: AWS::Bedrock::AgentAlias
+    Properties:
+      AgentId: !GetAtt BedrockAgent.AgentId
+      AgentAliasName: live
+      Description: "Production alias for the Bedrock agent"
+
+Outputs:
+  AgentId:
+    Description: "The unique ID of the Bedrock Agent"
+    Value: !GetAtt BedrockAgent.AgentId
+
+  AgentAliasId:
+    Description: "The unique ID of the Bedrock Agent Alias"
+    Value: !GetAtt BedrockAgentAlias.AgentAliasId
+
+  LambdaFunctionArn:
+    Description: "ARN of the action group Lambda function"
+    Value: !GetAtt ActionGroupLambda.Arn
+
+  WebAppUrl:
+    Description: "Public URL of the chat web app"
+    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com"

@@ -1,9 +1,12 @@
 import json
 import os
+import urllib.request
 
 import boto3
 
 from status import Status
+
+UPDATE_CONTRACTS_FEIN_URL = os.environ.get("UPDATE_CONTRACTS_FEIN_URL")
 
 dynamodb = boto3.resource("dynamodb")
 table = dynamodb.Table(os.environ["STATUS_TABLE"])
@@ -19,6 +22,7 @@ def lambda_handler(event, context):
     carrier_id = body.get("carrierId")  # Required: sort key
     status = body.get("status")  # Required
     npn = body.get("npn")  # Required: agent National Producer Number
+    requirements = body.get("requirements")  # Optional: list of {code, status, details}
 
     missing = [
         f
@@ -70,16 +74,33 @@ def lambda_handler(event, context):
 
     status_key = f"{carrier_id}#{npn}#{releasing_fein}"
 
-    table.put_item(
-        Item={
-            "ReceivingFein": receiving_fein,
-            "statusKey": status_key,
-            "ReleasingFein": releasing_fein,
+    item = {
+        "receivingFein": receiving_fein,
+        "statusKey": status_key,
+        "releasingFein": releasing_fein,
+        "carrierId": carrier_id,
+        "status": status,
+        "npn": npn,
+    }
+    if requirements is not None:
+        item["requirements"] = requirements
+
+    table.put_item(Item=item)
+
+    if status == "COMPLETED" and UPDATE_CONTRACTS_FEIN_URL:
+        payload = json.dumps({
             "carrierId": carrier_id,
-            "status": status,
             "npn": npn,
-        }
-    )
+            "releasingFein": releasing_fein,
+            "receivingFein": receiving_fein,
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            UPDATE_CONTRACTS_FEIN_URL,
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        urllib.request.urlopen(req)
 
     return {
         "statusCode": 200,
@@ -95,6 +116,7 @@ def lambda_handler(event, context):
                 "carrierId": carrier_id,
                 "status": status,
                 "npn": npn,
+                "requirements": requirements,
             }
         ),
     }
