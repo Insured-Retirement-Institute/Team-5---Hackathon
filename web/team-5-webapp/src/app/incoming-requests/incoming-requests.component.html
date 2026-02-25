@@ -1,0 +1,55 @@
+<div class="page">
+  <header class="page-header">
+    <div class="page-title-group">
+      <h1>Incoming Requests</h1>
+      @if (rows().length > 0) {
+        <span class="badge">{{ rows().length }}</span>
+      }
+    </div>
+  </header>
+
+  <div class="table-card">
+    <table class="requests-table">
+      <thead>
+        <tr>
+          <th>Agent Name</th>
+          <th>Agent NPN</th>
+          <th>Releasing IMO</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (loading()) {
+          <tr>
+            <td colspan="4" class="empty-state">
+              <div class="loading-indicator">
+                <div class="spinner"></div>
+                Loading requests...
+              </div>
+            </td>
+          </tr>
+        } @else if (rows().length === 0) {
+          <tr>
+            <td colspan="4" class="empty-state">
+              <div class="empty-content">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                </svg>
+                <span>No incoming requests</span>
+              </div>
+            </td>
+          </tr>
+        } @else {
+          @for (row of rows(); track row.npn + row.releasingImoName) {
+            <tr>
+              <td class="name-cell">{{ row.agentName }}</td>
+              <td><code class="mono">{{ row.npn }}</code></td>
+              <td>{{ row.releasingImoName }}</td>
+              <td><span class="status-badge">{{ row.status }}</span></td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

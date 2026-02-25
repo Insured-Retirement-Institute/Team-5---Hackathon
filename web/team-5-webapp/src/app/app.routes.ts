@@ -26,6 +26,12 @@ export const routes: Routes = [
     canActivate: [authGuard, imoGuard],
   },
   {
+    path: 'incoming-requests',
+    loadComponent: () =>
+      import('./incoming-requests/incoming-requests.component').then((m) => m.IncomingRequestsComponent),
+    canActivate: [authGuard, imoGuard],
+  },
+  {
     path: 'loi-request',
     loadComponent: () =>
       import('./loi-request/loi-request.component').then((m) => m.LoiRequestComponent),

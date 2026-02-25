@@ -546,13 +546,13 @@ components:
       type: object
       required:
         [
-          requiresReleaseLetter,
-          requiresSignedTransferPacket,
+          requiresLetterOfInstruction,
+          requiresTermsOfInstruction,
           minimumDaysInCurrentHierarchy,
         ]
       properties:
-        requiresReleaseLetter: { type: boolean }
-        requiresSignedTransferPacket: { type: boolean }
+        requiresLetterOfInstruction: { type: boolean }
+        requiresTermsOfInstruction: { type: boolean }
         minimumDaysInCurrentHierarchy:
           type: integer
           minimum: 0
@@ -603,13 +603,13 @@ components:
           type: object
           required:
             [
-              releaseLetterProvided,
-              signedTransferPacketProvided,
+              letterOfInstructionProvided,
+              termsOfInstructionProvided,
               daysInCurrentHierarchy,
             ]
           properties:
-            releaseLetterProvided: { type: boolean }
-            signedTransferPacketProvided: { type: boolean }
+            letterOfInstructionProvided: { type: boolean }
+            termsOfInstructionProvided: { type: boolean }
             daysInCurrentHierarchy:
               type: integer
               minimum: 0

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>@ViewData["Title"]</title>
+    @{
+        var carrierName = Environment.GetEnvironmentVariable("CARRIER_NAME") ?? "American Equity";
+        var faviconFile = carrierName == "Allianz" ? "favicon-allianz.svg" : "favicon.svg";
+    }
+    <link rel="icon" type="image/svg+xml" href="/@faviconFile" />
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+    @{
+        var carrierName = Environment.GetEnvironmentVariable("CARRIER_NAME") ?? "American Equity";
+        var logoFile = carrierName == "Allianz" ? "allianz-logo-header.svg" : "ae-logo-header.svg";
+    }
+    <div class="header">
+        <img src="/images/@logoFile" alt="@carrierName" class="header-logo" />
+        <div class="subtitle">Agent Transfer System - Carrier Portal</div>
+    </div>
+    @RenderBody()
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

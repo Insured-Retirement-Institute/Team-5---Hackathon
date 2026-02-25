@@ -52,7 +52,7 @@
               <td class="name-cell">{{ row.agentName }}</td>
               <td><code class="mono">{{ row.npn }}</code></td>
               <td>{{ row.releasingImoName }}</td>
-              <td><span class="status-badge">{{ row.status }}</span></td>
+              <td><span class="status-badge" [class.status-completed]="row.status === 'Completed'">{{ row.status }}</span></td>
               <td class="arrow-col">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="9 18 15 12 9 6"/>

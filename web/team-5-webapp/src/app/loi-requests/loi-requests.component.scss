@@ -137,6 +137,11 @@
   background: var(--color-primary-light);
   color: var(--color-primary);
   text-transform: capitalize;
+
+  &.status-completed {
+    background: #dcfce7;
+    color: #166534;
+  }
 }
 
 .arrow-col {

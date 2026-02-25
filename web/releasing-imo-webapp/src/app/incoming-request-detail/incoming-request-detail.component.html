@@ -1,0 +1,67 @@
+<div class="page">
+  <header class="page-header">
+    <h1>Request to release BoB for {{ agentName }}</h1>
+    <a routerLink="/incoming-requests" class="back-link">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+      </svg>
+      Back to incoming requests
+    </a>
+  </header>
+
+  @if (loading()) {
+    <div class="empty-card">
+      <p>Loading transfer details…</p>
+    </div>
+  } @else if (transfer(); as t) {
+    <div class="detail-card">
+      <section class="info-section">
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Agent NPN</span>
+            <span class="info-value"><code>{{ t.agent.npn }}</code></span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Receiving IMO</span>
+            <span class="info-value">{{ t.receivingImo.name }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Effective Date</span>
+            <span class="info-value">{{ t.effectiveDate }}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="consent-section">
+        <label class="consent-checkbox" (click)="toggleConsent()">
+          <span class="checkbox" [class.checked]="consented()">
+            @if (consented()) {
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            }
+          </span>
+          <span class="consent-label">I consent to release the book of business of {{ agentName }} to {{ receivingImoName }}</span>
+        </label>
+
+        <button
+          class="release-btn"
+          [disabled]="!consented() || releasing()"
+          (click)="release()">
+          @if (releasing()) {
+            Releasing…
+          } @else {
+            Release
+          }
+        </button>
+      </section>
+    </div>
+  } @else {
+    <div class="empty-card">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <p>No transfer data found. Go back and select a request.</p>
+    </div>
+  }
+</div>

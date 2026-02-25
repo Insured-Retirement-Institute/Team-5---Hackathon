@@ -1,0 +1,67 @@
+<div class="page">
+  <header class="page-header">
+    <div class="page-title-group">
+      <h1>Requests</h1>
+      @if (rows().length > 0) {
+        <span class="badge">{{ rows().length }}</span>
+      }
+    </div>
+    <a routerLink="/loi-request" class="create-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Create LOI Request
+    </a>
+  </header>
+
+  <div class="table-card">
+    <table class="requests-table">
+      <thead>
+        <tr>
+          <th>Agent Name</th>
+          <th>Agent NPN</th>
+          <th>Releasing IMO</th>
+          <th>Status</th>
+          <th class="arrow-col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (loading()) {
+          <tr>
+            <td colspan="5" class="empty-state">
+              <div class="loading-indicator">
+                <div class="spinner"></div>
+                Loading requests...
+              </div>
+            </td>
+          </tr>
+        } @else if (rows().length === 0) {
+          <tr>
+            <td colspan="5" class="empty-state">
+              <div class="empty-content">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                </svg>
+                <span>No requests yet</span>
+              </div>
+            </td>
+          </tr>
+        } @else {
+          @for (row of rows(); track row.npn + row.releasingImoName) {
+            <tr (click)="navigateToDetail(row)" class="clickable-row">
+              <td class="name-cell">{{ row.agentName }}</td>
+              <td><code class="mono">{{ row.npn }}</code></td>
+              <td>{{ row.releasingImoName }}</td>
+              <td><span class="status-badge">{{ row.status }}</span></td>
+              <td class="arrow-col">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

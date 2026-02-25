@@ -6,12 +6,13 @@ export type UserRole = 'agent' | 'imo';
 export interface LoggedInUser {
   username: string;
   role: UserRole;
+  imoFein: string;
 }
 
 /** Demo-only: hardcoded credentials. Do not use in production. */
-const DEMO_USERS: ReadonlyArray<{ username: string; password: string; role: UserRole }> = [
-  { username: 'agent', password: 'password', role: 'agent' },
-  { username: 'ImoAdmin', password: 'password', role: 'imo' },
+const DEMO_USERS: ReadonlyArray<{ username: string; password: string; role: UserRole; imoFein: string }> = [
+  { username: 'agent', password: 'password', role: 'agent', imoFein: '98-7654321' },
+  { username: 'ImoAdmin', password: 'password', role: 'imo', imoFein: '98-7654321' },
 ];
 
 const STORAGE_KEY = 'team5_logged_in_user';
@@ -30,7 +31,7 @@ export class AuthService {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return null;
       const user = JSON.parse(raw) as LoggedInUser;
-      if (user?.username && (user.role === 'agent' || user.role === 'imo')) {
+      if (user?.username && user?.imoFein && (user.role === 'agent' || user.role === 'imo')) {
         return user;
       }
     } catch {
@@ -47,7 +48,7 @@ export class AuthService {
     if (!user) {
       return null;
     }
-    const loggedIn: LoggedInUser = { username: user.username, role: user.role };
+    const loggedIn: LoggedInUser = { username: user.username, role: user.role, imoFein: user.imoFein };
     this.currentUserSignal.set(loggedIn);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(loggedIn));
     return loggedIn;
