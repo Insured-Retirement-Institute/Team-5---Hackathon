@@ -1,15 +1,15 @@
 {
-  "agentNpn": "17439285",
+  "agentNpn": "111",
   "targetImo": {
-    "name": "Summit IMO",
+    "name": "Advisors Excel",
     "fein": "98-7654321"
   },
-  "selectedCarrierIds": ["carrier_001"],
+  "selectedCarrierIds": ["allianz"],
   "selectedBookIds": ["bob_1001_A"],
   "effectiveDate": "2026-06-01",
   "requirementAnswers": {
-    "releaseLetterProvided": true,
-    "signedTransferPacketProvided": true,
+    "letterOfInstructionProvided": true,
+    "termsOfInstructionProvided": true,
     "daysInCurrentHierarchy": 365
   },
   "attestation": {

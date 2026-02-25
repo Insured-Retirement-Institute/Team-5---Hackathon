@@ -3,10 +3,10 @@ from copy import deepcopy
 AGENTS = [
     {
         "npn": "111",
-        "firstName": "Jordan",
-        "lastName": "Miles",
+        "firstName": "Bob",
+        "lastName": "Slydell",
         "currentImo": {
-            "name": "Legacy IMO Group",
+            "name": "Initrode IMO",
             "fein": "12-3456789",
         },
         "carriers": [
@@ -15,8 +15,8 @@ AGENTS = [
                 "carrierName": "Allianz",
                 "licensed": True,
                 "requirements": {
-                    "requiresReleaseLetter": True,
-                    "requiresSignedTransferPacket": True,
+                    "requiresLetterOfInstruction": True,
+                    "requiresTermsOfInstruction": True,
                     "minimumDaysInCurrentHierarchy": 180,
                 },
             },
@@ -25,8 +25,8 @@ AGENTS = [
                 "carrierName": "American Equity",
                 "licensed": True,
                 "requirements": {
-                    "requiresReleaseLetter": False,
-                    "requiresSignedTransferPacket": True,
+                    "requiresLetterOfInstruction": False,
+                    "requiresTermsOfInstruction": True,
                     "minimumDaysInCurrentHierarchy": 90,
                 },
             },
@@ -48,11 +48,11 @@ AGENTS = [
     },
     {
         "npn": "222",
-        "firstName": "Avery",
-        "lastName": "Chen",
+        "firstName": "Peter",
+        "lastName": "Gibbons",
         "currentImo": {
-            "name": "Legacy IMO Group",
-            "fein": "12-3456789",
+            "name": "Advisors Excel",
+            "fein": "98-7654321",
         },
         "carriers": [
             {
@@ -60,8 +60,8 @@ AGENTS = [
                 "carrierName": "Allianz",
                 "licensed": True,
                 "requirements": {
-                    "requiresReleaseLetter": True,
-                    "requiresSignedTransferPacket": False,
+                    "requiresLetterOfInstruction": True,
+                    "requiresTermsOfInstruction": False,
                     "minimumDaysInCurrentHierarchy": 120,
                 },
             },
@@ -70,8 +70,8 @@ AGENTS = [
                 "carrierName": "American Equity",
                 "licensed": True,
                 "requirements": {
-                    "requiresReleaseLetter": False,
-                    "requiresSignedTransferPacket": True,
+                    "requiresLetterOfInstruction": False,
+                    "requiresTermsOfInstruction": True,
                     "minimumDaysInCurrentHierarchy": 60,
                 },
             },

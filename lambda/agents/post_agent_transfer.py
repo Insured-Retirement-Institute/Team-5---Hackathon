@@ -122,18 +122,18 @@ def validate_payload(payload, agent):
             continue
 
         requirements = carrier.get("requirements", {})
-        if requirements.get("requiresReleaseLetter") and not requirement_answers.get(
-            "releaseLetterProvided"
+        if requirements.get("requiresLetterOfInstruction") and not requirement_answers.get(
+            "letterOfInstructionProvided"
         ):
             errors.append(
-                f"Carrier '{carrier_id}' requires releaseLetterProvided=true."
+                f"Carrier '{carrier_id}' requires letterOfInstructionProvided=true."
             )
 
-        if requirements.get("requiresSignedTransferPacket") and not requirement_answers.get(
-            "signedTransferPacketProvided"
+        if requirements.get("requiresTermsOfInstruction") and not requirement_answers.get(
+            "termsOfInstructionProvided"
         ):
             errors.append(
-                f"Carrier '{carrier_id}' requires signedTransferPacketProvided=true."
+                f"Carrier '{carrier_id}' requires termsOfInstructionProvided=true."
             )
 
         min_days = requirements.get("minimumDaysInCurrentHierarchy", 0)

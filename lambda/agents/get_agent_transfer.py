@@ -60,12 +60,16 @@ def lambda_handler(event, context):
                 "name": "",
                 "fein": "",
             },
-            "selectedCarrierIds": [],
-            "selectedBookIds": [],
+            "selectedCarrierIds": [
+                carrier["carrierId"] for carrier in agent.get("carriers", [])
+            ],
+            "selectedBookIds": [
+                book["bookId"] for book in agent.get("bookOfBusiness", [])
+            ],
             "effectiveDate": "YYYY-MM-DD",
             "requirementAnswers": {
-                "releaseLetterProvided": False,
-                "signedTransferPacketProvided": False,
+                "letterOfInstructionProvided": False,
+                "termsOfInstructionProvided": False,
                 "daysInCurrentHierarchy": 0,
             },
             "attestation": {
