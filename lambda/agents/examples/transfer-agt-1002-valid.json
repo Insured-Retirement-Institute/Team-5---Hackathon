@@ -1,0 +1,19 @@
+{
+  "agentId": "agt_1002",
+  "targetImo": {
+    "name": "Atlas IMO Partners",
+    "fein": "88-1122334"
+  },
+  "selectedCarrierIds": ["carrier_003", "carrier_009"],
+  "selectedBookIds": ["bob_1002_A", "bob_1002_B"],
+  "effectiveDate": "2026-07-15",
+  "requirementAnswers": {
+    "releaseLetterProvided": true,
+    "signedTransferPacketProvided": true,
+    "daysInCurrentHierarchy": 180
+  },
+  "attestation": {
+    "agentApproved": true,
+    "acknowledgedAt": "2026-02-25T15:30:00Z"
+  }
+}

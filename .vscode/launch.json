@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug ATS Agents Local API",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/lambda/agents/local_api.py",
+      "cwd": "${workspaceFolder}/lambda/agents",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    }
+  ]
+}

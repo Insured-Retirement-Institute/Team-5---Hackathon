@@ -3,24 +3,56 @@
 Define description.
 
 ## Get started
+
 We are currently in the process of standing up [SwaggerHub](https://wwww.swaggerhub.com) to host OpenAPI definitions. More to come.
+
+## API Gateway route mapping (Lambda)
+
+Use these route-to-handler mappings for ATS endpoints:
+
+Transfer endpoints:
+
+- `GET /ats/transfers` -> `lambda/list_transfers.lambda_handler`
+- `POST /ats/transfers` -> `lambda/create_transfer.lambda_handler`
+- `GET /ats/transfers/{id}` -> `lambda/get_transfer.lambda_handler`
+- `PATCH /ats/transfers/{id}` -> `lambda/patch_transfer.lambda_handler`
+
+Status endpoints:
+
+- `POST /ats/status` -> `lambda/set_status.lambda_handler`
+- `GET /ats/status/{fein}` -> `lambda/get_statuses.lambda_handler`
+
+Agent transfer endpoints:
+
+- `GET /ats/agents` -> `lambda/agents/list_agents.lambda_handler`
+- `GET /ats/agents/{id}/transfer` -> `lambda/agents/get_agent_transfer.lambda_handler`
+- `POST /ats/agents/{id}/transfer` -> `lambda/agents/post_agent_transfer.lambda_handler`
+
+Related files:
+
+- `lambda/agents/data.py` (shared sample data and lookup helpers)
+- `openapi_agent_api.yaml` (API contract for all ATS endpoints)
 
 Please refer to the [style guide](https://github.com/Insured-Retirement-Institute/Style-Guide) for technical governance of standards, data dictionary, and the code of conduct.
 
 ## Business Case
+
 Define your business case for the specification.
 
 ## User Stories, personna - supporting documents for the business case
+
 - Load your user stories, personna - supporting documents for the business case.
 
-## Business Owners 
+## Business Owners
+
 - Carrier Business Owner: contact
 - Distributor Business Owner: contact
 - Solution Provider Business Owner: contact
 
 ## How to engage, contribute, and give feedback
+
 - These working groups are occuring on ....
-- Please contact the business owners or IRI (hpikus@irionline.org) to get added to the working group discussions. 
+- Please contact the business owners or IRI (hpikus@irionline.org) to get added to the working group discussions.
 
 ## Change subsmissions and reporting issues and bugs
 

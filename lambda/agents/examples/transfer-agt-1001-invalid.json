@@ -1,0 +1,19 @@
+{
+  "agentId": "agt_1001",
+  "targetImo": {
+    "name": "Summit IMO",
+    "fein": "98-7654321"
+  },
+  "selectedCarrierIds": ["carrier_999"],
+  "selectedBookIds": ["bob_1001_A"],
+  "effectiveDate": "2026-06-01",
+  "requirementAnswers": {
+    "releaseLetterProvided": false,
+    "signedTransferPacketProvided": false,
+    "daysInCurrentHierarchy": 10
+  },
+  "attestation": {
+    "agentApproved": false,
+    "acknowledgedAt": ""
+  }
+}
