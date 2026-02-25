@@ -1,5 +1,5 @@
 {
-  "agentNpn": "17439285",
+  "agentNpn": "111",
   "targetImo": {
     "name": "Summit IMO",
     "fein": "98-7654321"
@@ -8,8 +8,8 @@
   "selectedBookIds": ["bob_1001_A"],
   "effectiveDate": "2026-06-01",
   "requirementAnswers": {
-    "releaseLetterProvided": false,
-    "signedTransferPacketProvided": false,
+    "letterOfInstructionProvided": false,
+    "termsOfInstructionProvided": false,
     "daysInCurrentHierarchy": 10
   },
   "attestation": {

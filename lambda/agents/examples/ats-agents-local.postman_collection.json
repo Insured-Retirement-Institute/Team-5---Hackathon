@@ -18,19 +18,19 @@
       }
     },
     {
-      "name": "Get Agent Transfer Details - 17439285",
+      "name": "Get Agent Transfer Details - 111",
       "request": {
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/ats/agents/17439285/validate",
+          "raw": "{{baseUrl}}/ats/agents/111/validate",
           "host": ["{{baseUrl}}"],
-          "path": ["ats", "agents", "17439285", "validate"]
+          "path": ["ats", "agents", "111", "validate"]
         }
       }
     },
     {
-      "name": "Validate Transfer - 17439285 (valid)",
+      "name": "Validate Transfer - 111 (valid)",
       "request": {
         "method": "POST",
         "header": [
@@ -41,17 +41,17 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"agentNpn\": \"17439285\",\n  \"targetImo\": {\n    \"name\": \"Summit IMO\",\n    \"fein\": \"98-7654321\"\n  },\n  \"selectedCarrierIds\": [\"carrier_001\"],\n  \"selectedBookIds\": [\"bob_1001_A\"],\n  \"effectiveDate\": \"2026-06-01\",\n  \"requirementAnswers\": {\n    \"releaseLetterProvided\": true,\n    \"signedTransferPacketProvided\": true,\n    \"daysInCurrentHierarchy\": 365\n  },\n  \"attestation\": {\n    \"agentApproved\": true,\n    \"acknowledgedAt\": \"2026-02-25T14:00:00Z\"\n  }\n}"
+          "raw": "{\n  \"agentNpn\": \"111\",\n  \"targetImo\": {\n    \"name\": \"Summit IMO\",\n    \"fein\": \"98-7654321\"\n  },\n  \"selectedCarrierIds\": [\"allianz\"],\n  \"selectedBookIds\": [\"bob_1001_A\"],\n  \"effectiveDate\": \"2026-06-01\",\n  \"requirementAnswers\": {\n    \"letterOfInstructionProvided\": true,\n    \"termsOfInstructionProvided\": true,\n    \"daysInCurrentHierarchy\": 365\n  },\n  \"attestation\": {\n    \"agentApproved\": true,\n    \"acknowledgedAt\": \"2026-02-25T14:00:00Z\"\n  }\n}"
         },
         "url": {
-          "raw": "{{baseUrl}}/ats/agents/17439285/validate",
+          "raw": "{{baseUrl}}/ats/agents/111/validate",
           "host": ["{{baseUrl}}"],
-          "path": ["ats", "agents", "17439285", "validate"]
+          "path": ["ats", "agents", "111", "validate"]
         }
       }
     },
     {
-      "name": "Validate Transfer - 19384572 (valid)",
+      "name": "Validate Transfer - 222 (valid)",
       "request": {
         "method": "POST",
         "header": [
@@ -62,17 +62,17 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"agentNpn\": \"19384572\",\n  \"targetImo\": {\n    \"name\": \"Atlas IMO Partners\",\n    \"fein\": \"88-1122334\"\n  },\n  \"selectedCarrierIds\": [\"carrier_003\", \"carrier_009\"],\n  \"selectedBookIds\": [\"bob_1002_A\", \"bob_1002_B\"],\n  \"effectiveDate\": \"2026-07-15\",\n  \"requirementAnswers\": {\n    \"releaseLetterProvided\": true,\n    \"signedTransferPacketProvided\": true,\n    \"daysInCurrentHierarchy\": 180\n  },\n  \"attestation\": {\n    \"agentApproved\": true,\n    \"acknowledgedAt\": \"2026-02-25T15:30:00Z\"\n  }\n}"
+          "raw": "{\n  \"agentNpn\": \"222\",\n  \"targetImo\": {\n    \"name\": \"Atlas IMO Partners\",\n    \"fein\": \"88-1122334\"\n  },\n  \"selectedCarrierIds\": [\"allianz\", \"american-equity\"],\n  \"selectedBookIds\": [\"bob_1002_A\", \"bob_1002_B\"],\n  \"effectiveDate\": \"2026-07-15\",\n  \"requirementAnswers\": {\n    \"letterOfInstructionProvided\": true,\n    \"termsOfInstructionProvided\": true,\n    \"daysInCurrentHierarchy\": 180\n  },\n  \"attestation\": {\n    \"agentApproved\": true,\n    \"acknowledgedAt\": \"2026-02-25T15:30:00Z\"\n  }\n}"
         },
         "url": {
-          "raw": "{{baseUrl}}/ats/agents/19384572/validate",
+          "raw": "{{baseUrl}}/ats/agents/222/validate",
           "host": ["{{baseUrl}}"],
-          "path": ["ats", "agents", "19384572", "validate"]
+          "path": ["ats", "agents", "222", "validate"]
         }
       }
     },
     {
-      "name": "Validate Transfer - 17439285 (invalid)",
+      "name": "Validate Transfer - 111 (invalid)",
       "request": {
         "method": "POST",
         "header": [
@@ -83,12 +83,12 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"agentNpn\": \"17439285\",\n  \"targetImo\": {\n    \"name\": \"Summit IMO\",\n    \"fein\": \"98-7654321\"\n  },\n  \"selectedCarrierIds\": [\"carrier_999\"],\n  \"selectedBookIds\": [\"bob_1001_A\"],\n  \"effectiveDate\": \"2026-06-01\",\n  \"requirementAnswers\": {\n    \"releaseLetterProvided\": false,\n    \"signedTransferPacketProvided\": false,\n    \"daysInCurrentHierarchy\": 10\n  },\n  \"attestation\": {\n    \"agentApproved\": false,\n    \"acknowledgedAt\": \"\"\n  }\n}"
+          "raw": "{\n  \"agentNpn\": \"111\",\n  \"targetImo\": {\n    \"name\": \"Summit IMO\",\n    \"fein\": \"98-7654321\"\n  },\n  \"selectedCarrierIds\": [\"carrier_999\"],\n  \"selectedBookIds\": [\"bob_1001_A\"],\n  \"effectiveDate\": \"2026-06-01\",\n  \"requirementAnswers\": {\n    \"letterOfInstructionProvided\": false,\n    \"termsOfInstructionProvided\": false,\n    \"daysInCurrentHierarchy\": 10\n  },\n  \"attestation\": {\n    \"agentApproved\": false,\n    \"acknowledgedAt\": \"\"\n  }\n}"
         },
         "url": {
-          "raw": "{{baseUrl}}/ats/agents/17439285/validate",
+          "raw": "{{baseUrl}}/ats/agents/111/validate",
           "host": ["{{baseUrl}}"],
-          "path": ["ats", "agents", "17439285", "validate"]
+          "path": ["ats", "agents", "111", "validate"]
         }
       }
     }
