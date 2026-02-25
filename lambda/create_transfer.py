@@ -19,7 +19,7 @@ FORWARD_API_URL_AE = os.environ.get("FORWARD_API_URL_AE")
 SET_STATUS_URL = os.environ.get("SET_STATUS_URL")
 
 forward_apis = [FORWARD_API_URL_ALLIANZ, FORWARD_API_URL_AE]
-carrier_ids = ["allianz", "americanEquity"]
+carrier_ids = ["allianz", "american-equity"]
 
 
 def forward_to_api(body, url):
@@ -143,8 +143,16 @@ def lambda_handler(event, context):
             logger.info("Forwarding transfer to carrier=%s url=%s", carrier_id, url)
             error_status, forward_body = forward_to_api(body, url)
             if error_status is not None:
-                logger.error("Forward failed carrier=%s status=%s body=%s", carrier_id, error_status, forward_body)
-                forward_errors[carrier_id] = {"status": error_status, "body": forward_body}
+                logger.error(
+                    "Forward failed carrier=%s status=%s body=%s",
+                    carrier_id,
+                    error_status,
+                    forward_body,
+                )
+                forward_errors[carrier_id] = {
+                    "status": error_status,
+                    "body": forward_body,
+                }
                 continue
 
             if SET_STATUS_URL:
@@ -167,15 +175,27 @@ def lambda_handler(event, context):
                     urllib.request.urlopen(status_req)
                 except urllib.error.HTTPError as e:
                     error_body = e.read().decode("utf-8")
-                    logger.error("set_status failed carrier=%s status=%s body=%s", carrier_id, e.code, error_body)
-                    status_warnings[carrier_id] = {"status": e.code, "message": error_body}
+                    logger.error(
+                        "set_status failed carrier=%s status=%s body=%s",
+                        carrier_id,
+                        e.code,
+                        error_body,
+                    )
+                    status_warnings[carrier_id] = {
+                        "status": e.code,
+                        "message": error_body,
+                    }
                 except Exception as e:
-                    logger.error("set_status failed carrier=%s error=%s", carrier_id, str(e))
+                    logger.error(
+                        "set_status failed carrier=%s error=%s", carrier_id, str(e)
+                    )
                     status_warnings[carrier_id] = {"status": 502, "message": str(e)}
 
         if len(forward_errors) == len(forward_apis):
             first_carrier, first_error = next(iter(forward_errors.items()))
-            return _error_response(first_error["status"], f"forward_{first_carrier}", first_error["body"])
+            return _error_response(
+                first_error["status"], f"forward_{first_carrier}", first_error["body"]
+            )
 
         response_body = {"id": key, "state": "SUBMITTED"}
         if status_warnings:
