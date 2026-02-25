@@ -404,3 +404,4 @@ FodyWeavers.xsd
 samconfig.toml
 .aws-sam/
 test.txt
+.venv

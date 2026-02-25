@@ -6,6 +6,60 @@ Define description. Test
 
 We are currently in the process of standing up [SwaggerHub](https://wwww.swaggerhub.com) to host OpenAPI definitions. More to come.
 
+## Python setup (3.12)
+
+Create and activate a Python 3.12 virtual environment:
+
+```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
+python --version
+```
+
+Install project dependencies:
+
+```bash
+pip install -r lambda/requirements.txt -r CarrierApi/requirements.txt -r team5_ai/webapp/requirements.txt
+```
+
+## SAM deploy quickstart
+
+This repo includes `samconfig.toml` configured for profile `iri`.
+
+Build and deploy the full ATS stack:
+
+```bash
+sam build
+sam deploy
+```
+
+Deploy only updated agents Lambda code (no infrastructure changes):
+
+```bash
+sam sync --code \
+	--resource-id ListAgentsFunction \
+	--resource-id GetAgentValidateFunction \
+	--resource-id PostAgentValidateFunction
+```
+
+Deploy agents-only template to existing API Gateway:
+
+```bash
+./scripts/deploy-agents.sh
+```
+
+Optional overrides:
+
+```bash
+AWS_PROFILE=iri AWS_REGION=us-east-1 SOURCE_STACK=ats-api AGENTS_STACK=ats-agents STAGE_NAME=prod ./scripts/deploy-agents.sh
+
+# If SOURCE_STACK has no AtsApiUrl output, provide API directly:
+EXISTING_REST_API_ID=21yem0s5jl AWS_PROFILE=iri AWS_REGION=us-east-1 ./scripts/deploy-agents.sh
+
+# Or resolve by API name (default is hackathon):
+API_NAME=hackathon AWS_PROFILE=iri AWS_REGION=us-east-1 ./scripts/deploy-agents.sh
+```
+
 ## API Gateway route mapping (Lambda)
 
 Use these route-to-handler mappings for ATS endpoints:

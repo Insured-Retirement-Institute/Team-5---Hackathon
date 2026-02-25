@@ -1,0 +1,146 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/aws/serverless-application-model/main/samtranslator/schema/schema.json
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: ATS Agents-only API deployment attached to an existing API Gateway REST API
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: python3.12
+
+Parameters:
+  ExistingRestApiId:
+    Type: String
+    Description: Existing API Gateway REST API ID to attach routes to
+  ExistingAtsResourceId:
+    Type: String
+    Description: API Gateway resource ID for existing /ats path
+  StageName:
+    Type: String
+    Default: prod
+    Description: Existing API Gateway stage name to deploy methods to
+
+Resources:
+  ListAgentsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-list-agents"
+      CodeUri: lambda/
+      Handler: agents.list_agents.lambda_handler
+      Description: GET /ats/agents — List agents with carriers and books of business
+
+  GetAgentValidateFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-get-agent-validate"
+      CodeUri: lambda/
+      Handler: agents.get_agent_transfer.lambda_handler
+      Description: GET /ats/agents/{id}/validate — Get agent transfer validation context
+
+  PostAgentValidateFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-post-agent-validate"
+      CodeUri: lambda/
+      Handler: agents.post_agent_transfer.lambda_handler
+      Description: POST /ats/agents/{id}/validate — Validate submitted transfer payload
+
+  AgentsResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ExistingRestApiId
+      ParentId: !Ref ExistingAtsResourceId
+      PathPart: agents
+
+  AgentIdResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ExistingRestApiId
+      ParentId: !Ref AgentsResource
+      PathPart: "{id}"
+
+  ValidateResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ExistingRestApiId
+      ParentId: !Ref AgentIdResource
+      PathPart: validate
+
+  ListAgentsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ExistingRestApiId
+      ResourceId: !Ref AgentsResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ListAgentsFunction.Arn}/invocations"
+
+  GetAgentValidateMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ExistingRestApiId
+      ResourceId: !Ref ValidateResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.path.id: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetAgentValidateFunction.Arn}/invocations"
+
+  PostAgentValidateMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ExistingRestApiId
+      ResourceId: !Ref ValidateResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.path.id: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PostAgentValidateFunction.Arn}/invocations"
+
+  ListAgentsPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref ListAgentsFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${ExistingRestApiId}/*/GET/ats/agents"
+
+  GetAgentValidatePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref GetAgentValidateFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${ExistingRestApiId}/*/GET/ats/agents/*/validate"
+
+  PostAgentValidatePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref PostAgentValidateFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${ExistingRestApiId}/*/POST/ats/agents/*/validate"
+
+  AgentsApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - ListAgentsMethod
+      - GetAgentValidateMethod
+      - PostAgentValidateMethod
+    Properties:
+      RestApiId: !Ref ExistingRestApiId
+      StageName: !Ref StageName
+
+Outputs:
+  ExistingApiBaseUrl:
+    Description: Existing API base URL where agents routes are attached
+    Value: !Sub "https://${ExistingRestApiId}.execute-api.${AWS::Region}.amazonaws.com/${StageName}"
