@@ -9,7 +9,11 @@
     </a>
   </header>
 
-  @if (groupItems && groupItems.length > 0) {
+  @if (loading()) {
+    <div class="empty-card">
+      <p>Loading request details…</p>
+    </div>
+  } @else if (groupItems() && groupItems()!.length > 0) {
     <div class="detail-card">
       <section class="info-section">
         <div class="info-grid">
@@ -21,14 +25,24 @@
             <span class="info-label">Releasing IMO</span>
             <span class="info-value">{{ releasingImoName }}</span>
           </div>
+          <div class="info-item">
+            <span class="info-label">Supporting Documentation</span>
+            @if (supportingDoc) {
+              <a class="doc-download-link" (click)="downloadDoc()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                {{ supportingDoc.fileName }}
+              </a>
+            } @else {
+              <span class="info-value no-doc">None provided</span>
+            }
+          </div>
         </div>
       </section>
 
       <section class="carrier-section">
         <h2 class="section-header">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="1" y="3" width="15" height="13"/><polygon points="23 7 16 12 16 2"/>
-          </svg>
           Carrier Statuses
         </h2>
         <div class="table-wrapper">
@@ -37,16 +51,36 @@
               <tr>
                 <th>Carrier</th>
                 <th>Status</th>
+                <th>Requirements</th>
               </tr>
             </thead>
             <tbody>
-              @for (item of groupItems; track $index) {
+              @for (item of groupItems()!; track $index) {
                 <tr>
                   <td class="carrier-name">{{ carrierName(item.carrierId) }}</td>
                   <td>
                     <span class="status-badge" [class.status-active]="item.status === 'ACTIVE'" [class.status-complete]="item.status !== 'ACTIVE'">
                       {{ formatStatus(item.status) }}
                     </span>
+                  </td>
+                  <td>
+                    @if (item.requirements && item.requirements.length > 0) {
+                      <ul class="requirements-list">
+                        @for (req of item.requirements; track req.code) {
+                          <li class="requirement-item">
+                            <span class="requirement-code">{{ formatRequirementCode(req.code) }}</span>
+                            <span class="req-status-badge"
+                              [class.req-satisfied]="req.status === 'SATISFIED'"
+                              [class.req-open]="req.status === 'OPEN'">
+                              {{ formatStatus(req.status) }}
+                            </span>
+                            <span class="requirement-details">{{ req.details }}</span>
+                          </li>
+                        }
+                      </ul>
+                    } @else {
+                      <span class="no-requirements">None</span>
+                    }
                   </td>
                 </tr>
               }

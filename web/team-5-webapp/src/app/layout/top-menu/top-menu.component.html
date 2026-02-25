@@ -1,8 +1,7 @@
 <nav class="top-menu">
   <div class="nav-left">
     <a class="logo" routerLink="/book-of-business" title="Current IMO">
-      <img src="/images/CurrentIMOLogo.png" alt="" width="36" height="36" class="logo-img" />
-      <span class="logo-text">Current IMO</span>
+      <img src="/images/allianz.png" alt="" height=36 class="logo-img" />
     </a>
     <div class="nav-divider"></div>
     <div class="nav-links">
@@ -12,6 +11,9 @@
     @if (auth.currentUser()?.role === 'imo') {
       <a routerLink="/loi-requests" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: false }">
         LOI Requests
+      </a>
+      <a routerLink="/incoming-requests" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: false }">
+        Incoming Requests
       </a>
     }
     </div>

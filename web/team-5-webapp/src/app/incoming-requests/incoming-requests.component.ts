@@ -1,9 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
 import { allImos, ApiService, LoiRequestStatusItem } from '../api/api.service';
 import { AuthService } from '../auth/auth.service';
 
-export interface LoiRequestRow {
+export interface IncomingRequestRow {
   agentName: string;
   npn: string;
   releasingImoName: string;
@@ -12,22 +11,21 @@ export interface LoiRequestRow {
 }
 
 @Component({
-  selector: 'app-loi-requests',
+  selector: 'app-incoming-requests',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
-  templateUrl: './loi-requests.component.html',
-  styleUrl: './loi-requests.component.scss',
+  imports: [],
+  templateUrl: './incoming-requests.component.html',
+  styleUrl: './incoming-requests.component.scss',
 })
-export class LoiRequestsComponent implements OnInit {
+export class IncomingRequestsComponent implements OnInit {
   private readonly api = inject(ApiService);
-  private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
 
-  readonly rows = signal<LoiRequestRow[]>([]);
+  readonly rows = signal<IncomingRequestRow[]>([]);
   readonly loading = signal(true);
 
   ngOnInit(): void {
-    this.api.getRequestStatuses(this.auth.currentUser()!.imoFein).subscribe({
+    this.api.getIncomingRequests(this.auth.currentUser()!.imoFein).subscribe({
       next: (items) => {
         this.rows.set(this.groupAndMapRows(items));
         this.loading.set(false);
@@ -39,14 +37,7 @@ export class LoiRequestsComponent implements OnInit {
     });
   }
 
-  navigateToDetail(row: LoiRequestRow): void {
-    const first = row.groupItems[0];
-    this.router.navigate(['/loi-requests/details'], {
-      queryParams: { releasingFein: first.releasingFein, npn: first.npn },
-    });
-  }
-
-  private groupAndMapRows(items: LoiRequestStatusItem[]): LoiRequestRow[] {
+  private groupAndMapRows(items: LoiRequestStatusItem[]): IncomingRequestRow[] {
     const groupKey = (item: LoiRequestStatusItem) => `${item.releasingFein}|${item.npn}`;
     const groups = new Map<string, LoiRequestStatusItem[]>();
     for (const item of items) {
@@ -67,7 +58,7 @@ export class LoiRequestsComponent implements OnInit {
         releasingImoName: releasingImo?.name ?? first.releasingFein,
         status: isComplete ? 'Completed' : (isRejected ? 'Rejected' : (isInitiated ? 'Initiated' : 'Pending')),
         groupItems,
-      } satisfies LoiRequestRow;
+      } satisfies IncomingRequestRow;
     });
   }
 }

@@ -19,7 +19,7 @@ export const agentGuard: CanActivateFn = () => {
     return true;
   }
   if (user?.role === 'imo') {
-    return inject(Router).createUrlTree(['/imo']);
+    return inject(Router).createUrlTree(['/book-of-business']);
   }
   return inject(Router).createUrlTree(['/login']);
 };
@@ -32,7 +32,7 @@ export const imoGuard: CanActivateFn = () => {
     return true;
   }
   if (user?.role === 'agent') {
-    return inject(Router).createUrlTree(['/agent']);
+    return inject(Router).createUrlTree(['/book-of-business']);
   }
   return inject(Router).createUrlTree(['/login']);
 };
@@ -44,6 +44,6 @@ export const loginRedirectGuard: CanActivateFn = () => {
   if (!user) {
     return true;
   }
-  const target = user.role === 'agent' ? '/agent' : '/imo';
+  const target = '/book-of-business';
   return inject(Router).createUrlTree([target]);
 };
