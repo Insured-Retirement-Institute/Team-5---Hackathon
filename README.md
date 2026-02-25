@@ -120,8 +120,8 @@ See [style guide](https://github.com/Insured-Retirement-Institute/Style-Guide)
 
 TODO:
 Confirm target stack/API:
-aws cloudformation describe-stacks --stack-name <his-stack> --query "Stacks[0].Parameters" --output table
+`aws cloudformation describe-stacks --stack-name <his-stack> --query "Stacks[0].Parameters" --output table`
 Confirm agent resources exist in that API:
-aws apigateway get-resources --rest-api-id <api-id> --limit 500 --query "items[?starts_with(path, '/ats/agents')].[path,id]" --output table
+`aws apigateway get-resources --rest-api-id <api-id> --limit 500 --query "items[?starts_with(path, '/ats/agents')].[path,id]" --output table`
 If he only needs code updates, skip infra changes:
-sam sync --code --resource-id ListAgentsFunction --resource-id GetAgentValidateFunction --resource-id PostAgentValidateFunction
+`sam sync --code --resource-id ListAgentsFunction --resource-id GetAgentValidateFunction --resource-id PostAgentValidateFunction`
