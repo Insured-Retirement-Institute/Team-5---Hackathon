@@ -6,6 +6,12 @@ from boto3.dynamodb.conditions import Attr
 
 dynamodb = boto3.resource("dynamodb")
 table = dynamodb.Table(os.environ["CONTRACTS_TABLE"])
+agent_table = dynamodb.Table(os.environ["AGENT_TABLE"])
+
+
+def get_agent(npn):
+    response = agent_table.get_item(Key={"npn": npn})
+    return response.get("Item")
 
 
 def lambda_handler(event, context):
@@ -25,14 +31,24 @@ def lambda_handler(event, context):
         }
 
     response = table.scan(FilterExpression=Attr("fein").eq(fein))
-    items = response["Items"]
+    raw_items = response["Items"]
 
     while "LastEvaluatedKey" in response:
         response = table.scan(
             FilterExpression=Attr("fein").eq(fein),
             ExclusiveStartKey=response["LastEvaluatedKey"],
         )
-        items.extend(response["Items"])
+        raw_items.extend(response["Items"])
+
+    items = []
+    for contract in raw_items:
+        npn = contract.get("npn")
+        agent = get_agent(npn) if npn else None
+        items.append({
+            **contract,
+            "agentFirstName": agent.get("firstName") if agent else None,
+            "agentLastName": agent.get("lastName") if agent else None,
+        })
 
     return {
         "statusCode": 200,

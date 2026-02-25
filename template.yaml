@@ -210,9 +210,12 @@ Resources:
       Environment:
         Variables:
           CONTRACTS_TABLE: !Ref ContractsTable
+          AGENT_TABLE: !Ref AgentTable
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref ContractsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref AgentTable
       Events:
         GetContracts:
           Type: Api
