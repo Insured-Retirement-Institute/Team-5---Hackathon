@@ -7,6 +7,7 @@ class Status(Enum):
     CANCELED = 3
     REJECTED = 4
     INITIATED = 5
+    RELEASED = 6
 
 
 # Status:

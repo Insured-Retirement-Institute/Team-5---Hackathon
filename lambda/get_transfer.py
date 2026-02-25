@@ -19,7 +19,14 @@ def lambda_handler(event, context):
                 "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Headers": "Content-Type,Idempotency-Key",
             },
-            "body": json.dumps({"error": {"code": "MISSING_FEIN", "message": "releasing FEIN is required"}}),
+            "body": json.dumps(
+                {
+                    "error": {
+                        "code": "MISSING_FEIN",
+                        "message": "releasing FEIN is required",
+                    }
+                }
+            ),
         }
 
     result = table.scan(FilterExpression=Attr("releasingImoFein").eq(releasing_fein))
@@ -58,6 +65,7 @@ def dynamo_record_to_carrier_body(record):
         consent["eSignatureRef"] = record["eSignatureRef"]
 
     body = {
+        "id": record["id"],
         "agent": agent,
         "releasingImo": {
             "fein": record["releasingImoFein"],

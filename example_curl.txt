@@ -28,3 +28,7 @@ curl -X POST "https://21yem0s5jl.execute-api.us-east-1.amazonaws.com/prod/ats/v1
 
 --get transfers
 curl https://21yem0s5jl.execute-api.us-east-1.amazonaws.com/prod/ats/v1/transfers/12-3456789
+
+--release transfer
+curl -X POST https://21yem0s5jl.execute-api.us-east-1.amazonaws.com/prod/ats/v1/transfers/99-7654321%7C13-3456789%7C17439285/release
+

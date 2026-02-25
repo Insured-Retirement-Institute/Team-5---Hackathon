@@ -253,6 +253,31 @@ Resources:
             Path: /ats/v1/contracts/update-fein
             Method: POST
             
+  ReleaseTransferToCarriersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/
+      Handler: release_transfer_to_carriers.lambda_handler
+      Description: POST /ats/v1/transfers/{id}/release — Release a transfer to carrier APIs
+      Environment:
+        Variables:
+          TRANSFERS_TABLE: !Ref TransfersTable
+          STATUS_TABLE: !Ref StatusTable
+          FORWARD_API_URL_ALLIANZ: "https://mj8skppu81.execute-api.us-east-1.amazonaws.com/ats/v1/transfers"
+          FORWARD_API_URL_AE: "https://9f6yrhcul7.execute-api.us-east-1.amazonaws.com/ats/v1/transfers"
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref TransfersTable
+        - DynamoDBWritePolicy:
+            TableName: !Ref StatusTable
+      Events:
+        ReleaseTransferToCarriers:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AtsApi
+            Path: /ats/v1/transfers/{id}/release
+            Method: POST
+
   ListAgentsFunction:
     Type: AWS::Serverless::Function
     Properties:

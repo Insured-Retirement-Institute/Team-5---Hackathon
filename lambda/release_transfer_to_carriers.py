@@ -11,6 +11,7 @@ logger.setLevel(logging.INFO)
 
 dynamodb = boto3.resource("dynamodb")
 table = dynamodb.Table(os.environ["TRANSFERS_TABLE"])
+status_table = dynamodb.Table(os.environ["STATUS_TABLE"])
 
 FORWARD_API_URL_ALLIANZ = os.environ.get("FORWARD_API_URL_ALLIANZ")
 FORWARD_API_URL_AE = os.environ.get("FORWARD_API_URL_AE")
@@ -98,6 +99,10 @@ def lambda_handler(event, context):
 
     carrier_body = dynamo_record_to_carrier_body(record)
 
+    receiving_fein = record["receivingImoFein"]
+    releasing_fein = record["releasingImoFein"]
+    npn = record["agentNpn"]
+
     forward_errors = {}
     for url, carrier_id in zip(forward_apis, carrier_ids):
         logger.info("Releasing transfer=%s to carrier=%s url=%s", transfer_id, carrier_id, url)
@@ -105,6 +110,20 @@ def lambda_handler(event, context):
         if error_status is not None:
             logger.error("Forward failed carrier=%s status=%s body=%s", carrier_id, error_status, forward_body)
             forward_errors[carrier_id] = {"status": error_status, "body": forward_body}
+            continue
+
+        status_key = f"{carrier_id}#{npn}#{releasing_fein}"
+        logger.info("Updating status to RELEASED for carrier=%s statusKey=%s", carrier_id, status_key)
+        try:
+            status_table.update_item(
+                Key={"receivingFein": receiving_fein, "statusKey": status_key},
+                UpdateExpression="SET #s = :s",
+                ExpressionAttributeNames={"#s": "status"},
+                ExpressionAttributeValues={":s": "RELEASED"},
+            )
+            logger.info("Status updated to RELEASED for carrier=%s", carrier_id)
+        except Exception as e:
+            logger.error("Failed to update status to RELEASED for carrier=%s: %s", carrier_id, str(e))
 
     if len(forward_errors) == len(forward_apis):
         _, first_error = next(iter(forward_errors.items()))

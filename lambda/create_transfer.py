@@ -100,7 +100,7 @@ def lambda_handler(event, context):
             "notes"
         )  # Optional: free text for carrier processing (max 2000 chars)
 
-        key = f"{receiving_imo_fein}|{releasing_imo_fein}|{agent_npn}"
+        key = f"{receiving_imo_fein}-{releasing_imo_fein}-{agent_npn}"
 
         item = {
             "id": key,
@@ -141,9 +141,9 @@ def lambda_handler(event, context):
         status_warnings = {}
         for url, carrier_id in zip(forward_apis, carrier_ids):
             logger.info("Forwarding transfer to carrier=%s url=%s", carrier_id, url)
-            error_status, forward_body = forward_to_api(body, url)
-            # error_status = None
-            # forward_body = None
+            # error_status, forward_body = forward_to_api(body, url)
+            error_status = None
+            forward_body = None
             if error_status is not None:
                 logger.error(
                     "Forward failed carrier=%s status=%s body=%s",
