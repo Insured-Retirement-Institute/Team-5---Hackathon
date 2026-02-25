@@ -52,6 +52,7 @@ fi
 
 ATS_RESOURCE_ID=$(aws apigateway get-resources \
   --rest-api-id "$REST_API_ID" \
+  --limit 500 \
   --profile "$PROFILE" \
   --region "$REGION" \
   --query "items[?path=='/ats'].id | [0]" \
@@ -60,6 +61,7 @@ ATS_RESOURCE_ID=$(aws apigateway get-resources \
 if [[ -z "$ATS_RESOURCE_ID" || "$ATS_RESOURCE_ID" == "None" ]]; then
   ROOT_RESOURCE_ID=$(aws apigateway get-resources \
     --rest-api-id "$REST_API_ID" \
+    --limit 500 \
     --profile "$PROFILE" \
     --region "$REGION" \
     --query "items[?path=='/'].id | [0]" \
@@ -85,14 +87,72 @@ fi
 echo "Resolved REST_API_ID=$REST_API_ID"
 echo "Resolved ATS_RESOURCE_ID=$ATS_RESOURCE_ID"
 
+AGENTS_RESOURCE_ID=$(aws apigateway get-resources \
+  --rest-api-id "$REST_API_ID" \
+  --limit 500 \
+  --profile "$PROFILE" \
+  --region "$REGION" \
+  --query "items[?path=='/ats/agents'].id | [0]" \
+  --output text)
+
+if [[ "$AGENTS_RESOURCE_ID" == "None" ]]; then
+  AGENTS_RESOURCE_ID=""
+fi
+
+AGENT_VARIABLE_RESOURCE_ID=""
+VALIDATE_RESOURCE_ID=""
+
+if [[ -n "$AGENTS_RESOURCE_ID" ]]; then
+  AGENT_VARIABLE_RESOURCE_ID=$(aws apigateway get-resources \
+    --rest-api-id "$REST_API_ID" \
+    --limit 500 \
+    --profile "$PROFILE" \
+    --region "$REGION" \
+    --query "items[?parentId=='${AGENTS_RESOURCE_ID}' && starts_with(pathPart, '{')].id | [0]" \
+    --output text)
+
+  if [[ "$AGENT_VARIABLE_RESOURCE_ID" == "None" ]]; then
+    AGENT_VARIABLE_RESOURCE_ID=""
+  fi
+
+  if [[ -n "$AGENT_VARIABLE_RESOURCE_ID" ]]; then
+    VALIDATE_RESOURCE_ID=$(aws apigateway get-resources \
+      --rest-api-id "$REST_API_ID" \
+      --limit 500 \
+      --profile "$PROFILE" \
+      --region "$REGION" \
+      --query "items[?parentId=='${AGENT_VARIABLE_RESOURCE_ID}' && pathPart=='validate'].id | [0]" \
+      --output text)
+
+    if [[ "$VALIDATE_RESOURCE_ID" == "None" ]]; then
+      VALIDATE_RESOURCE_ID=""
+    fi
+  fi
+fi
+
+echo "Resolved AGENTS_RESOURCE_ID=${AGENTS_RESOURCE_ID:-<create>}"
+echo "Resolved AGENT_VARIABLE_RESOURCE_ID=${AGENT_VARIABLE_RESOURCE_ID:-<create>}"
+echo "Resolved VALIDATE_RESOURCE_ID=${VALIDATE_RESOURCE_ID:-<create>}"
+
 sam build --template-file "$TEMPLATE_FILE"
+
+PARAM_OVERRIDES=(
+  "ExistingRestApiId=$REST_API_ID"
+  "ExistingAtsResourceId=$ATS_RESOURCE_ID"
+  "ExistingAgentsResourceId=${AGENTS_RESOURCE_ID:-__CREATE__}"
+  "ExistingAgentVariableResourceId=${AGENT_VARIABLE_RESOURCE_ID:-__CREATE__}"
+  "ExistingValidateResourceId=${VALIDATE_RESOURCE_ID:-__CREATE__}"
+  "StageName=$STAGE_NAME"
+)
 
 sam deploy \
   --template-file "$TEMPLATE_FILE" \
   --stack-name "$AGENTS_STACK" \
   --capabilities CAPABILITY_IAM \
+  --no-confirm-changeset \
+  --no-fail-on-empty-changeset \
   --profile "$PROFILE" \
   --region "$REGION" \
-  --parameter-overrides ExistingRestApiId="$REST_API_ID" ExistingAtsResourceId="$ATS_RESOURCE_ID" StageName="$STAGE_NAME"
+  --parameter-overrides "${PARAM_OVERRIDES[@]}"
 
 echo "Agents deployment completed."

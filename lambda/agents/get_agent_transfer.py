@@ -1,9 +1,9 @@
 import json
 
 try:
-    from .data import get_agent
+    from .data import get_agent_by_npn
 except ImportError:
-    from data import get_agent
+    from data import get_agent_by_npn
 
 
 CORS_HEADERS = {
@@ -14,22 +14,23 @@ CORS_HEADERS = {
 
 
 def lambda_handler(event, context):
-    agent_id = (event.get("pathParameters") or {}).get("id")
-    if not agent_id:
+    path_parameters = event.get("pathParameters") or {}
+    agent_npn = path_parameters.get("npn") or path_parameters.get("id")
+    if not agent_npn:
         return {
             "statusCode": 400,
             "headers": CORS_HEADERS,
             "body": json.dumps(
                 {
                     "error": {
-                        "code": "MISSING_AGENT_ID",
-                        "message": "Path parameter 'id' is required.",
+                        "code": "MISSING_AGENT_NPN",
+                        "message": "Path parameter 'npn' (or legacy 'id') is required.",
                     }
                 }
             ),
         }
 
-    agent = get_agent(agent_id)
+    agent = get_agent_by_npn(agent_npn)
     if not agent:
         return {
             "statusCode": 404,
@@ -38,7 +39,7 @@ def lambda_handler(event, context):
                 {
                     "error": {
                         "code": "AGENT_NOT_FOUND",
-                        "message": f"Agent '{agent_id}' was not found.",
+                        "message": f"Agent with NPN '{agent_npn}' was not found.",
                     }
                 }
             ),
@@ -46,7 +47,6 @@ def lambda_handler(event, context):
 
     payload = {
         "agent": {
-            "id": agent["id"],
             "npn": agent["npn"],
             "firstName": agent["firstName"],
             "lastName": agent["lastName"],
@@ -55,7 +55,7 @@ def lambda_handler(event, context):
         "carriers": agent["carriers"],
         "bookOfBusiness": agent["bookOfBusiness"],
         "requiredSubmissionPayload": {
-            "agentId": agent["id"],
+            "agentNpn": agent["npn"],
             "targetImo": {
                 "name": "",
                 "fein": "",

@@ -21,7 +21,6 @@ def lambda_handler(event, context):
 
     response_payload = [
         {
-            "id": agent["id"],
             "npn": agent["npn"],
             "firstName": agent["firstName"],
             "lastName": agent["lastName"],

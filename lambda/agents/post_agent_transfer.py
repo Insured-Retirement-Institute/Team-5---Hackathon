@@ -1,9 +1,9 @@
 import json
 
 try:
-    from .data import get_agent
+    from .data import get_agent_by_npn
 except ImportError:
-    from data import get_agent
+    from data import get_agent_by_npn
 
 
 CORS_HEADERS = {
@@ -14,11 +14,15 @@ CORS_HEADERS = {
 
 
 def lambda_handler(event, context):
-    agent_id = (event.get("pathParameters") or {}).get("id")
-    if not agent_id:
-        return _bad_request("MISSING_AGENT_ID", "Path parameter 'id' is required.")
+    path_parameters = event.get("pathParameters") or {}
+    agent_npn = path_parameters.get("npn") or path_parameters.get("id")
+    if not agent_npn:
+        return _bad_request(
+            "MISSING_AGENT_NPN",
+            "Path parameter 'npn' (or legacy 'id') is required.",
+        )
 
-    agent = get_agent(agent_id)
+    agent = get_agent_by_npn(agent_npn)
     if not agent:
         return {
             "statusCode": 404,
@@ -27,7 +31,7 @@ def lambda_handler(event, context):
                 {
                     "error": {
                         "code": "AGENT_NOT_FOUND",
-                        "message": f"Agent '{agent_id}' was not found.",
+                        "message": f"Agent with NPN '{agent_npn}' was not found.",
                     }
                 }
             ),
@@ -54,7 +58,7 @@ def lambda_handler(event, context):
         "body": json.dumps(
             {
                 "valid": True,
-                "agentId": agent_id,
+                "agentNpn": agent_npn,
                 "message": "Payload is valid for transfer submission.",
             }
         ),
@@ -64,8 +68,8 @@ def lambda_handler(event, context):
 def validate_payload(payload, agent):
     errors = []
 
-    if payload.get("agentId") != agent["id"]:
-        errors.append("agentId must match path parameter id.")
+    if payload.get("agentNpn") != agent["npn"]:
+        errors.append("agentNpn must match path parameter npn.")
 
     target_imo = payload.get("targetImo") or {}
     target_name = target_imo.get("name")

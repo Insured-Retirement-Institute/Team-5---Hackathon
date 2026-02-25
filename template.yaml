@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/aws/serverless-application-model/main/samtranslator/schema/schema.json
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: Agent Transfer Standard (ATS) API
 
@@ -9,7 +9,6 @@ Globals:
     Runtime: python3.12
 
 Resources:
-
   TransfersTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -115,7 +114,7 @@ Resources:
         Variables:
           TRANSFERS_TABLE: !Ref TransfersTable
           AGENT_TABLE: !Ref AgentTable
-          FORWARD_API_URL: "https://plwlku50il.execute-api.us-east-1.amazonaws.com/prod/ats/transfers"  # TODO: set to the target API URL
+          FORWARD_API_URL: "https://plwlku50il.execute-api.us-east-1.amazonaws.com/prod/ats/transfers" # TODO: set to the target API URL
       Policies:
         - DynamoDBWritePolicy:
             TableName: !Ref TransfersTable
@@ -241,6 +240,48 @@ Resources:
           Properties:
             RestApiId: !Ref AtsApi
             Path: /ats/contracts/update-fein
+            Method: POST
+
+  ListAgentsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/
+      Handler: agents.list_agents.lambda_handler
+      Description: GET /ats/agents — List agents with carriers and books of business
+      Events:
+        ListAgents:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AtsApi
+            Path: /ats/agents
+            Method: GET
+
+  GetAgentValidateFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/
+      Handler: agents.get_agent_transfer.lambda_handler
+      Description: GET /ats/agents/{npn}/validate — Get agent transfer validation context
+      Events:
+        GetAgentValidate:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AtsApi
+            Path: /ats/agents/{npn}/validate
+            Method: GET
+
+  PostAgentValidateFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/
+      Handler: agents.post_agent_transfer.lambda_handler
+      Description: POST /ats/agents/{npn}/validate — Validate submitted transfer payload
+      Events:
+        PostAgentValidate:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AtsApi
+            Path: /ats/agents/{npn}/validate
             Method: POST
 
 Outputs:

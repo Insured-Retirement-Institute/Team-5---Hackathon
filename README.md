@@ -48,6 +48,8 @@ Deploy agents-only template to existing API Gateway:
 ./scripts/deploy-agents.sh
 ```
 
+Note: both deployment templates (`template.yaml` and `template-agents.yaml`) use NPN-based agent routes: `/ats/agents/{npn}/validate`.
+
 Optional overrides:
 
 ```bash
@@ -79,8 +81,8 @@ Status endpoints:
 Agent transfer endpoints:
 
 - `GET /ats/agents` -> `lambda/agents/list_agents.lambda_handler`
-- `GET /ats/agents/{id}/validate` -> `lambda/agents/get_agent_transfer.lambda_handler`
-- `POST /ats/agents/{id}/validate` -> `lambda/agents/post_agent_transfer.lambda_handler`
+- `GET /ats/agents/{npn}/validate` -> `lambda/agents/get_agent_transfer.lambda_handler`
+- `POST /ats/agents/{npn}/validate` -> `lambda/agents/post_agent_transfer.lambda_handler`
 
 Related files:
 

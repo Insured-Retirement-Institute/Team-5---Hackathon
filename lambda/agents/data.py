@@ -2,8 +2,7 @@ from copy import deepcopy
 
 AGENTS = [
     {
-        "id": "agt_1001",
-        "npn": "17439285",
+        "npn": "111",
         "firstName": "Jordan",
         "lastName": "Miles",
         "currentImo": {
@@ -12,8 +11,8 @@ AGENTS = [
         },
         "carriers": [
             {
-                "carrierId": "carrier_001",
-                "carrierName": "Northstar Life",
+                "carrierId": "allianz",
+                "carrierName": "Allianz",
                 "licensed": True,
                 "requirements": {
                     "requiresReleaseLetter": True,
@@ -22,8 +21,8 @@ AGENTS = [
                 },
             },
             {
-                "carrierId": "carrier_014",
-                "carrierName": "Pioneer Financial",
+                "carrierId": "american-equity",
+                "carrierName": "American Equity",
                 "licensed": True,
                 "requirements": {
                     "requiresReleaseLetter": False,
@@ -35,21 +34,20 @@ AGENTS = [
         "bookOfBusiness": [
             {
                 "bookId": "bob_1001_A",
-                "carrierId": "carrier_001",
+                "carrierId": "allianz",
                 "policyCount": 42,
                 "annualizedPremium": 1850000.00,
             },
             {
                 "bookId": "bob_1001_B",
-                "carrierId": "carrier_014",
+                "carrierId": "american-equity",
                 "policyCount": 17,
                 "annualizedPremium": 540000.00,
             },
         ],
     },
     {
-        "id": "agt_1002",
-        "npn": "19384572",
+        "npn": "222",
         "firstName": "Avery",
         "lastName": "Chen",
         "currentImo": {
@@ -58,8 +56,8 @@ AGENTS = [
         },
         "carriers": [
             {
-                "carrierId": "carrier_003",
-                "carrierName": "Blue Harbor",
+                "carrierId": "allianz",
+                "carrierName": "Allianz",
                 "licensed": True,
                 "requirements": {
                     "requiresReleaseLetter": True,
@@ -68,8 +66,8 @@ AGENTS = [
                 },
             },
             {
-                "carrierId": "carrier_009",
-                "carrierName": "Summit Annuity",
+                "carrierId": "american-equity",
+                "carrierName": "American Equity",
                 "licensed": True,
                 "requirements": {
                     "requiresReleaseLetter": False,
@@ -81,13 +79,13 @@ AGENTS = [
         "bookOfBusiness": [
             {
                 "bookId": "bob_1002_A",
-                "carrierId": "carrier_003",
+                "carrierId": "allianz",
                 "policyCount": 23,
                 "annualizedPremium": 950000.00,
             },
             {
                 "bookId": "bob_1002_B",
-                "carrierId": "carrier_009",
+                "carrierId": "american-equity",
                 "policyCount": 11,
                 "annualizedPremium": 420000.00,
             },
@@ -107,8 +105,8 @@ def list_agents(receiving_imo_fein: str | None = None):
     ]
 
 
-def get_agent(agent_id: str):
+def get_agent_by_npn(npn: str):
     for agent in AGENTS:
-        if agent["id"] == agent_id:
+        if agent["npn"] == npn:
             return deepcopy(agent)
     return None

@@ -260,17 +260,17 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/AgentListItem" }
 
-  /ats/agents/{id}/validate:
+  /ats/agents/{npn}/validate:
     get:
       tags: [Agents]
       summary: Get transfer requirements and payload contract for an agent
       operationId: getAgentTransfer
       parameters:
         - in: path
-          name: id
+          name: npn
           required: true
           schema: { type: string }
-          description: Agent identifier
+          description: Agent NPN
       responses:
         "200":
           description: Agent transfer context with carriers, requirements, and book of business
@@ -278,7 +278,7 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/AgentTransferContext" }
         "400":
-          description: Missing id path parameter
+          description: Missing npn path parameter
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
@@ -294,10 +294,10 @@ paths:
       operationId: validateAgentTransfer
       parameters:
         - in: path
-          name: id
+          name: npn
           required: true
           schema: { type: string }
-          description: Agent identifier
+          description: Agent NPN
       requestBody:
         required: true
         content:
@@ -310,10 +310,10 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [valid, agentId, message]
+                required: [valid, agentNpn, message]
                 properties:
                   valid: { type: boolean, enum: [true] }
-                  agentId: { type: string }
+                  agentNpn: { type: string }
                   message: { type: string }
         "400":
           description: Payload failed validation
@@ -490,9 +490,8 @@ components:
 
     AgentListItem:
       type: object
-      required: [id, npn, firstName, lastName, carriers, bookOfBusiness]
+      required: [npn, firstName, lastName, carriers, bookOfBusiness]
       properties:
-        id: { type: string }
         npn: { type: string }
         firstName: { type: string }
         lastName: { type: string }
@@ -511,9 +510,8 @@ components:
       properties:
         agent:
           type: object
-          required: [id, npn, firstName, lastName, currentImo]
+          required: [npn, firstName, lastName, currentImo]
           properties:
-            id: { type: string }
             npn: { type: string }
             firstName: { type: string }
             lastName: { type: string }
@@ -576,7 +574,7 @@ components:
       type: object
       required:
         [
-          agentId,
+          agentNpn,
           targetImo,
           selectedCarrierIds,
           selectedBookIds,
@@ -585,9 +583,9 @@ components:
           attestation,
         ]
       properties:
-        agentId:
+        agentNpn:
           type: string
-          description: Must match the {id} in path
+          description: Must match the {npn} in path
         targetImo:
           $ref: "#/components/schemas/OrgRef"
         selectedCarrierIds:
