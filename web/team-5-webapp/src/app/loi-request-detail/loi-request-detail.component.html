@@ -1,0 +1,66 @@
+<div class="page">
+  <header class="page-header">
+    <h1>Request details for {{ agentName }}</h1>
+    <a routerLink="/loi-requests" class="back-link">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+      </svg>
+      Back to requests
+    </a>
+  </header>
+
+  @if (groupItems && groupItems.length > 0) {
+    <div class="detail-card">
+      <section class="info-section">
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Agent NPN</span>
+            <span class="info-value"><code>{{ npn }}</code></span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Releasing IMO</span>
+            <span class="info-value">{{ releasingImoName }}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="carrier-section">
+        <h2 class="section-header">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="3" width="15" height="13"/><polygon points="23 7 16 12 16 2"/>
+          </svg>
+          Carrier Statuses
+        </h2>
+        <div class="table-wrapper">
+          <table class="carrier-status-table">
+            <thead>
+              <tr>
+                <th>Carrier</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of groupItems; track $index) {
+                <tr>
+                  <td class="carrier-name">{{ carrierName(item.carrierId) }}</td>
+                  <td>
+                    <span class="status-badge" [class.status-active]="item.status === 'ACTIVE'" [class.status-complete]="item.status !== 'ACTIVE'">
+                      {{ formatStatus(item.status) }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  } @else {
+    <div class="empty-card">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <p>No request data. Go back and select a request.</p>
+    </div>
+  }
+</div>

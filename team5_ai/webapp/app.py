@@ -1,0 +1,67 @@
+"""
+webapp/app.py
+
+Simple Flask chat app that proxies messages to the Bedrock Agent.
+Run with: python webapp/app.py
+"""
+
+import os
+import uuid
+import boto3
+from flask import Flask, render_template, request, jsonify, session
+from asgiref.wsgi import WsgiToAsgi
+from mangum import Mangum
+
+AGENT_ID = os.environ.get("AGENT_ID", "SZJMM4QTCE")
+AGENT_ALIAS_ID = os.environ.get("AGENT_ALIAS_ID", "TSTALIASID")
+REGION = os.environ.get("AWS_REGION", "us-east-1")
+
+app = Flask(__name__)
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-secret-key-change-in-prod")
+
+bedrock = boto3.client("bedrock-agent-runtime", region_name=REGION)
+
+
+@app.route("/")
+def index():
+    if "session_id" not in session:
+        session["session_id"] = str(uuid.uuid4())
+    return render_template("index.html")
+
+
+@app.route("/chat", methods=["POST"])
+def chat():
+    data = request.get_json()
+    user_message = (data or {}).get("message", "").strip()
+    if not user_message:
+        return jsonify({"error": "Empty message"}), 400
+
+    if "session_id" not in session:
+        session["session_id"] = str(uuid.uuid4())
+
+    try:
+        response = bedrock.invoke_agent(
+            agentId=AGENT_ID,
+            agentAliasId=AGENT_ALIAS_ID,
+            sessionId=session["session_id"],
+            inputText=user_message,
+        )
+
+        # Collect streaming chunks
+        reply = ""
+        for event in response.get("completion", []):
+            chunk = event.get("chunk")
+            if chunk:
+                reply += chunk.get("bytes", b"").decode()
+
+        return jsonify({"reply": reply})
+
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+
+# Lambda handler (used when deployed to AWS)
+handler = Mangum(WsgiToAsgi(app), lifespan="off")
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
