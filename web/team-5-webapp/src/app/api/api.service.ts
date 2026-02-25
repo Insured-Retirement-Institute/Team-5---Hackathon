@@ -2,7 +2,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
-const BASE_URL = 'https://21yem0s5jl.execute-api.us-east-1.amazonaws.com/prod/v1';
+const BASE_URL = 'https://21yem0s5jl.execute-api.us-east-1.amazonaws.com/prod/ats/v1';
 
 export interface TransferAgent {
   npn: string;
@@ -59,7 +59,8 @@ export interface LoiRequestStatusItem {
 }
 
 export const allImos: ImoInfo[] = [
-    { fein: '12-3456789', name: 'Past IMO' },
+    { fein: '12-3456789', name: 'Initrode IMO' },
+    { fein: '98-7654321', name: 'Advisors Excel' },
     { fein: '55-1234567', name: 'Some Other IMO' },
 ];
 
@@ -80,11 +81,11 @@ export class ApiService {
     if (idempotencyKey) {
       headers = headers.set('Idempotency-Key', idempotencyKey);
     }
-    return this.http.post(`${BASE_URL}/ats/transfers`, request, { headers });
+    return this.http.post(`${BASE_URL}/transfers`, request, { headers });
   }
 
   getRequestStatuses(receivingFein: string): Observable<LoiRequestStatusItem[]> {
-    return this.http.get<LoiRequestStatusItem[]>(`${BASE_URL}/ats/status/${encodeURIComponent(receivingFein)}`);
+    return this.http.get<LoiRequestStatusItem[]>(`${BASE_URL}/status/${encodeURIComponent(receivingFein)}`);
   }
 
   getIncomingRequests(releasingFein: string): Observable<LoiRequestStatusItem[]> {
@@ -92,6 +93,6 @@ export class ApiService {
   }
 
   getContracts(fein: string): Observable<Contract[]> {
-    return this.http.get<Contract[]>(`${BASE_URL}/ats/contracts/${encodeURIComponent(fein)}`);
+    return this.http.get<Contract[]>(`${BASE_URL}/contracts/${encodeURIComponent(fein)}`);
   }
 }

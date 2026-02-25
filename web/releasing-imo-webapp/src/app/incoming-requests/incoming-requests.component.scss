@@ -111,6 +111,17 @@
   text-transform: capitalize;
 }
 
+.arrow-col {
+  width: 2rem;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.clickable-row {
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
 .empty-state {
   text-align: center;
   padding: 3rem !important;

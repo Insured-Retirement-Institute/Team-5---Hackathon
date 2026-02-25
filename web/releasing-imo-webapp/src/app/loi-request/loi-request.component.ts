@@ -31,7 +31,7 @@ export class LoiRequestComponent implements OnInit {
 
   private readonly receivingImo: ImoInfo = {
     fein: this.auth.currentUser()!.imoFein,
-    name: 'Current IMO',
+    name: 'Initrode IMO',
   };
 
   protected readonly form = this.fb.nonNullable.group({

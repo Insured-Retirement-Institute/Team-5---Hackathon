@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
-import { allImos, ApiService, LoiRequestStatusItem } from '../api/api.service';
+import { Router } from '@angular/router';
+import { ApiService, TransferRecord } from '../api/api.service';
 import { AuthService } from '../auth/auth.service';
 
 export interface IncomingRequestRow {
   agentName: string;
   npn: string;
+  receivingFein: string;
   receivingImoName: string;
-  status: 'Pending' | 'Completed' | 'Rejected' | 'Initiated';
-  groupItems: LoiRequestStatusItem[];
+  effectiveDate: string;
 }
 
 @Component({
@@ -19,6 +20,7 @@ export interface IncomingRequestRow {
 })
 export class IncomingRequestsComponent implements OnInit {
   private readonly api = inject(ApiService);
+  private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
 
   readonly rows = signal<IncomingRequestRow[]>([]);
@@ -26,8 +28,8 @@ export class IncomingRequestsComponent implements OnInit {
 
   ngOnInit(): void {
     this.api.getIncomingRequests(this.auth.currentUser()!.imoFein).subscribe({
-      next: (items) => {
-        this.rows.set(this.groupAndMapRows(items));
+      next: (transfers) => {
+        this.rows.set(this.mapRows(transfers));
         this.loading.set(false);
       },
       error: () => {
@@ -37,28 +39,19 @@ export class IncomingRequestsComponent implements OnInit {
     });
   }
 
-  private groupAndMapRows(items: LoiRequestStatusItem[]): IncomingRequestRow[] {
-    const groupKey = (item: LoiRequestStatusItem) => `${item.releasingFein}|${item.npn}`;
-    const groups = new Map<string, LoiRequestStatusItem[]>();
-    for (const item of items) {
-      const key = groupKey(item);
-      const list = groups.get(key) ?? [];
-      list.push(item);
-      groups.set(key, list);
-    }
-    return Array.from(groups.entries()).map(([, groupItems]) => {
-      const first = groupItems[0];
-      const releasingImo = allImos.find((imo) => imo.fein === first.releasingFein);
-      const isComplete = groupItems.every((i) => i.status === 'COMPLETED');
-      const isRejected = groupItems.some((i) => i.status === 'REJECTED');
-      const isInitiated = groupItems.some((i) => i.status === 'INITIATED');
-      return {
-        agentName: `${first.agentFirstName} ${first.agentLastName}`.trim(),
-        npn: first.npn,
-        receivingImoName: releasingImo?.name ?? first.releasingFein,
-        status: isComplete ? 'Completed' : (isRejected ? 'Rejected' : (isInitiated ? 'Initiated' : 'Pending')),
-        groupItems,
-      } satisfies IncomingRequestRow;
+  navigateToDetail(row: IncomingRequestRow): void {
+    this.router.navigate(['/incoming-requests/details'], {
+      queryParams: { npn: row.npn, receivingFein: row.receivingFein },
     });
+  }
+
+  private mapRows(transfers: TransferRecord[]): IncomingRequestRow[] {
+    return transfers.map((t) => ({
+      agentName: `${t.agent.firstName} ${t.agent.lastName}`.trim(),
+      npn: t.agent.npn,
+      receivingFein: t.receivingImo.fein,
+      receivingImoName: t.receivingImo.name,
+      effectiveDate: t.effectiveDate,
+    }));
   }
 }
