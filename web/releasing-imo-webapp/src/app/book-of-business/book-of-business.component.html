@@ -1,0 +1,127 @@
+<div class="page">
+  <header class="page-header">
+    <div class="page-title-group">
+      <h1>Book of Business</h1>
+      @if (sortedRows().length > 0) {
+        <span class="badge">{{ sortedRows().length }}</span>
+      }
+    </div>
+  </header>
+
+  <div class="table-card">
+    <table class="contracts-table">
+      <thead>
+        <tr>
+          <th class="sortable" (click)="toggleSort('contractNumber')">
+            Contract Number
+            <span class="sort-icon" [class.active]="sortColumn() === 'contractNumber'">
+              @if (sortColumn() === 'contractNumber' && sortDirection() === 'desc') {
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              } @else {
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+              }
+            </span>
+          </th>
+          <th class="sortable" (click)="toggleSort('agentName')">
+            Agent Name
+            <span class="sort-icon" [class.active]="sortColumn() === 'agentName'">
+              @if (sortColumn() === 'agentName' && sortDirection() === 'desc') {
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              } @else {
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+              }
+            </span>
+          </th>
+          <th class="sortable" (click)="toggleSort('npn')">
+            NPN
+            <span class="sort-icon" [class.active]="sortColumn() === 'npn'">
+              @if (sortColumn() === 'npn' && sortDirection() === 'desc') {
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              } @else {
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+              }
+            </span>
+          </th>
+          <th class="sortable" (click)="toggleSort('carrierName')">
+            Carrier
+            <span class="sort-icon" [class.active]="sortColumn() === 'carrierName'">
+              @if (sortColumn() === 'carrierName' && sortDirection() === 'desc') {
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              } @else {
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+              }
+            </span>
+          </th>
+          <th class="sortable" (click)="toggleSort('contractType')">
+            Contract Type
+            <span class="sort-icon" [class.active]="sortColumn() === 'contractType'">
+              @if (sortColumn() === 'contractType' && sortDirection() === 'desc') {
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              } @else {
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+              }
+            </span>
+          </th>
+          <th class="sortable align-right" (click)="toggleSort('contractValue')">
+            Contract Value
+            <span class="sort-icon" [class.active]="sortColumn() === 'contractValue'">
+              @if (sortColumn() === 'contractValue' && sortDirection() === 'desc') {
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              } @else {
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+              }
+            </span>
+          </th>
+          <th class="sortable" (click)="toggleSort('issueDate')">
+            Issue Date
+            <span class="sort-icon" [class.active]="sortColumn() === 'issueDate'">
+              @if (sortColumn() === 'issueDate' && sortDirection() === 'desc') {
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              } @else {
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+              }
+            </span>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (loading()) {
+          <tr>
+            <td colspan="7" class="empty-state">
+              <div class="loading-indicator">
+                <div class="spinner"></div>
+                Loading contracts...
+              </div>
+            </td>
+          </tr>
+        } @else if (sortedRows().length === 0) {
+          <tr>
+            <td colspan="7" class="empty-state">
+              <div class="empty-content">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+                <span>No contracts found</span>
+              </div>
+            </td>
+          </tr>
+        } @else {
+          @for (row of sortedRows(); track row.id) {
+            <tr>
+              <td>{{ row.contractNumber }}</td>
+              <td>{{ row.agentName }}</td>
+              <td><code class="mono">{{ row.npn }}</code></td>
+              <td>{{ row.carrierName }}</td>
+              <td>{{ row.contractType }}</td>
+              <td class="align-right">{{ row.contractValue | currency:'USD':'symbol':'1.0-0' }}</td>
+              <td>{{ row.issueDate | date:'MM/dd/yyyy' }}</td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

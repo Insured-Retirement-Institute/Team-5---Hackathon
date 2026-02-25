@@ -1,0 +1,102 @@
+<div class="page">
+  <header class="page-header">
+    <h1>LOI Request</h1>
+    <a routerLink="/loi-requests" class="back-link">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+      </svg>
+      Back to requests
+    </a>
+  </header>
+
+  @if (submitSuccess()) {
+    <div class="success-banner" role="status">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+      Transfer request submitted successfully.
+    </div>
+  }
+
+  <div class="form-card">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <div class="form-grid">
+        <div class="field">
+          <label for="agentFirstName">Agent First Name</label>
+          <input id="agentFirstName" type="text" formControlName="agentFirstName" placeholder="Enter first name" />
+        </div>
+
+        <div class="field">
+          <label for="agentLastName">Agent Last Name</label>
+          <input id="agentLastName" type="text" formControlName="agentLastName" placeholder="Enter last name" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="agentNpn">Agent NPN</label>
+        <input id="agentNpn" type="text" formControlName="agentNpn" placeholder="Enter NPN number" />
+      </div>
+
+      <div class="field">
+        <label for="releasingImo">Releasing IMO</label>
+        <select id="releasingImo" formControlName="releasingImo">
+          <option value="" disabled>Select an IMO</option>
+          @for (opt of releasingImoOptions; track opt.fein) {
+            <option [value]="opt.fein">{{ opt.label }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="effectiveDate">Effective Date</label>
+        <input id="effectiveDate" type="date" formControlName="effectiveDate" />
+      </div>
+
+      <div class="field">
+        <label for="supportingDoc">Supporting Documentation</label>
+        <div class="file-upload" [class.has-file]="selectedFileName()" (click)="fileInput.click()">
+          <input #fileInput id="supportingDoc" type="file" (change)="onFileSelected($event)" hidden />
+          @if (selectedFileName()) {
+            <div class="file-info">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span class="file-name">{{ selectedFileName() }}</span>
+              <button type="button" class="file-remove" (click)="removeFile($event)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+          } @else {
+            <div class="file-placeholder">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span>Click to upload a file</span>
+            </div>
+          }
+        </div>
+        <span class="field-hint">Optional</span>
+      </div>
+
+      @if (submitError()) {
+        <div class="error-banner" role="alert">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+          </svg>
+          {{ submitError() }}
+        </div>
+      }
+
+      <div class="form-actions">
+        <button type="submit" [disabled]="form.invalid || submitting()">
+          @if (submitting()) {
+            <div class="btn-spinner"></div>
+            Submitting...
+          } @else {
+            Submit LOI Request
+          }
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

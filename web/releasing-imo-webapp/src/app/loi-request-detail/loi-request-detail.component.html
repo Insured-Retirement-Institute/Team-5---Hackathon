@@ -1,0 +1,100 @@
+<div class="page">
+  <header class="page-header">
+    <h1>Request details for {{ agentName }}</h1>
+    <a routerLink="/loi-requests" class="back-link">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+      </svg>
+      Back to requests
+    </a>
+  </header>
+
+  @if (loading()) {
+    <div class="empty-card">
+      <p>Loading request details…</p>
+    </div>
+  } @else if (groupItems() && groupItems()!.length > 0) {
+    <div class="detail-card">
+      <section class="info-section">
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Agent NPN</span>
+            <span class="info-value"><code>{{ npn }}</code></span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Releasing IMO</span>
+            <span class="info-value">{{ releasingImoName }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Supporting Documentation</span>
+            @if (supportingDoc) {
+              <a class="doc-download-link" (click)="downloadDoc()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                {{ supportingDoc.fileName }}
+              </a>
+            } @else {
+              <span class="info-value no-doc">None provided</span>
+            }
+          </div>
+        </div>
+      </section>
+
+      <section class="carrier-section">
+        <h2 class="section-header">
+          Carrier Statuses
+        </h2>
+        <div class="table-wrapper">
+          <table class="carrier-status-table">
+            <thead>
+              <tr>
+                <th>Carrier</th>
+                <th>Status</th>
+                <th>Requirements</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of groupItems()!; track $index) {
+                <tr>
+                  <td class="carrier-name">{{ carrierName(item.carrierId) }}</td>
+                  <td>
+                    <span class="status-badge" [class.status-active]="item.status === 'ACTIVE'" [class.status-complete]="item.status !== 'ACTIVE'">
+                      {{ formatStatus(item.status) }}
+                    </span>
+                  </td>
+                  <td>
+                    @if (item.requirements && item.requirements.length > 0) {
+                      <ul class="requirements-list">
+                        @for (req of item.requirements; track req.code) {
+                          <li class="requirement-item">
+                            <span class="requirement-code">{{ formatRequirementCode(req.code) }}</span>
+                            <span class="req-status-badge"
+                              [class.req-satisfied]="req.status === 'SATISFIED'"
+                              [class.req-open]="req.status === 'OPEN'">
+                              {{ formatStatus(req.status) }}
+                            </span>
+                            <span class="requirement-details">{{ req.details }}</span>
+                          </li>
+                        }
+                      </ul>
+                    } @else {
+                      <span class="no-requirements">None</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  } @else {
+    <div class="empty-card">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <p>No request data. Go back and select a request.</p>
+    </div>
+  }
+</div>
