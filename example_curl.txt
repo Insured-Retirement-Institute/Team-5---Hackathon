@@ -7,14 +7,14 @@ curl -X POST https://mj8skppu81.execute-api.us-east-1.amazonaws.com/ats/v1/trans
 
 
 --SET STATUS
-curl -X POST https://21yem0s5jl.execute-api.us-east-1.amazonaws.com/v1/prod/ats/status \
+curl -X POST https://21yem0s5jl.execute-api.us-east-1.amazonaws.com/prod/ats/v1/status \
   -H "Content-Type: application/json" \
   -d '{
     "receivingFein": "98-7654321",
     "releasingFein": "12-3456789",
-    "carrierId": "carrier_001",
-    "status": "PENDING",
-    "npn": "17439285"
+    "carrierId": "allianz",
+    "status": "COMPLETED",
+    "npn": "111"
   }'
 
 --get statuses
