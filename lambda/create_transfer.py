@@ -9,14 +9,18 @@ dynamodb = boto3.resource("dynamodb")
 table = dynamodb.Table(os.environ["TRANSFERS_TABLE"])
 agent_table = dynamodb.Table(os.environ["AGENT_TABLE"])
 
-FORWARD_API_URL = os.environ.get("FORWARD_API_URL")
+FORWARD_API_URL_ALLIANZ = os.environ.get("FORWARD_API_URL")
+FORWARD_API_URL_AE = os.environ.get("FORWARD_API_URL")
 SET_STATUS_URL = os.environ.get("SET_STATUS_URL")
 
+forward_apis = [FORWARD_API_URL_ALLIANZ, FORWARD_API_URL_AE]
+carrier_ids = ["allianz", "americanEquity"]
 
-def forward_to_api(body):
+
+def forward_to_api(body, url):
     data = json.dumps(body).encode("utf-8")
     req = urllib.request.Request(
-        FORWARD_API_URL,
+        url,
         data=data,
         headers={"Content-Type": "application/json"},
         method="POST",
@@ -108,36 +112,45 @@ def lambda_handler(event, context):
         agent_record["lastName"] = agent_last_name
     agent_table.put_item(Item=agent_record)
 
-    error_status, forward_body = forward_to_api(body)
-    if error_status is not None:
+    forward_errors = {}
+    for url, carrier_id in zip(forward_apis, carrier_ids):
+        error_status, forward_body = forward_to_api(body, url)
+        if error_status is not None:
+            forward_errors[carrier_id] = {"status": error_status, "body": forward_body}
+            continue
+
+        if SET_STATUS_URL:
+            status_payload = json.dumps(
+                {
+                    "receivingFein": receiving_imo_fein,
+                    "releasingFein": releasing_imo_fein,
+                    "carrierId": carrier_id,
+                    "status": "INITIATED",
+                    "npn": agent_npn,
+                }
+            ).encode("utf-8")
+            status_req = urllib.request.Request(
+                SET_STATUS_URL,
+                data=status_payload,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            try:
+                urllib.request.urlopen(status_req)
+            except Exception:
+                pass
+
+    if len(forward_errors) == len(forward_apis):
+        first_error = next(iter(forward_errors.values()))
         return {
-            "statusCode": error_status,
+            "statusCode": first_error["status"],
             "headers": {
                 "Content-Type": "application/json",
                 "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Headers": "Content-Type,Idempotency-Key",
             },
-            "body": forward_body,
+            "body": first_error["body"],
         }
-
-    if SET_STATUS_URL:
-        status_payload = json.dumps({
-            "receivingFein": receiving_imo_fein,
-            "releasingFein": releasing_imo_fein,
-            "carrierId": "carrier_001",
-            "status": "INITIATED",
-            "npn": agent_npn,
-        }).encode("utf-8")
-        status_req = urllib.request.Request(
-            SET_STATUS_URL,
-            data=status_payload,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-        try:
-            urllib.request.urlopen(status_req)
-        except Exception:
-            pass
 
     return {
         "statusCode": 201,
