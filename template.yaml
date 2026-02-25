@@ -55,6 +55,7 @@ Resources:
   StatusTable:
     Type: AWS::DynamoDB::Table
     Properties:
+      TableName: Status
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: receivingFein
@@ -165,6 +166,7 @@ Resources:
       Environment:
         Variables:
           STATUS_TABLE: !Ref StatusTable
+          UPDATE_CONTRACTS_FEIN_URL: "https://21yem0s5jl.execute-api.us-east-1.amazonaws.com/prod/ats/contracts/update-fein"
       Policies:
         - DynamoDBWritePolicy:
             TableName: !Ref StatusTable

@@ -1,9 +1,12 @@
 import json
 import os
+import urllib.request
 
 import boto3
 
 from status import Status
+
+UPDATE_CONTRACTS_FEIN_URL = os.environ.get("UPDATE_CONTRACTS_FEIN_URL")
 
 dynamodb = boto3.resource("dynamodb")
 table = dynamodb.Table(os.environ["STATUS_TABLE"])
@@ -83,6 +86,21 @@ def lambda_handler(event, context):
         item["requirements"] = requirements
 
     table.put_item(Item=item)
+
+    if status == "COMPLETED" and UPDATE_CONTRACTS_FEIN_URL:
+        payload = json.dumps({
+            "carrierId": carrier_id,
+            "npn": npn,
+            "releasingFein": releasing_fein,
+            "receivingFein": receiving_fein,
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            UPDATE_CONTRACTS_FEIN_URL,
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        urllib.request.urlopen(req)
 
     return {
         "statusCode": 200,
