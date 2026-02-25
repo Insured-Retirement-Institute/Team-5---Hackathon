@@ -10,6 +10,7 @@ table = dynamodb.Table(os.environ["TRANSFERS_TABLE"])
 agent_table = dynamodb.Table(os.environ["AGENT_TABLE"])
 
 FORWARD_API_URL = os.environ.get("FORWARD_API_URL")
+SET_STATUS_URL = os.environ.get("SET_STATUS_URL")
 
 
 def forward_to_api(body):
@@ -118,6 +119,25 @@ def lambda_handler(event, context):
             },
             "body": forward_body,
         }
+
+    if SET_STATUS_URL:
+        status_payload = json.dumps({
+            "receivingFein": receiving_imo_fein,
+            "releasingFein": releasing_imo_fein,
+            "carrierId": "carrier_001",
+            "status": "INITIATED",
+            "npn": agent_npn,
+        }).encode("utf-8")
+        status_req = urllib.request.Request(
+            SET_STATUS_URL,
+            data=status_payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            urllib.request.urlopen(status_req)
+        except Exception:
+            pass
 
     return {
         "statusCode": 201,
