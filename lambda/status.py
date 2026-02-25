@@ -6,7 +6,7 @@ class Status(Enum):
     COMPLETED = 2
     CANCELED = 3
     REJECTED = 4
-    INITIATED = 4
+    INITIATED = 5
 
 
 # Status:
