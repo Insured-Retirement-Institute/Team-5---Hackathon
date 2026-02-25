@@ -1,0 +1,126 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CarrierApi - AppRunner with API Gateway
+
+Parameters:
+  ImageUri:
+    Type: String
+    Description: ECR image URI
+    Default: 533267258893.dkr.ecr.us-east-1.amazonaws.com/carrier-api:latest
+  CarrierName:
+    Type: String
+    Description: Carrier name (American Equity or Allianz)
+    AllowedValues:
+      - American Equity
+      - Allianz
+  CarrierId:
+    Type: String
+    Description: Carrier ID for ATS Hub
+
+Resources:
+  AppRunnerInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: tasks.apprunner.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+
+  AppRunnerAccessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: build.apprunner.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSAppRunnerServicePolicyForECRAccess
+
+  CarrierApiService:
+    Type: AWS::AppRunner::Service
+    Properties:
+      ServiceName: !Sub 'carrier-api-${CarrierId}'
+      SourceConfiguration:
+        AuthenticationConfiguration:
+          AccessRoleArn: !GetAtt AppRunnerAccessRole.Arn
+        ImageRepository:
+          ImageIdentifier: !Ref ImageUri
+          ImageRepositoryType: ECR
+          ImageConfiguration:
+            Port: 8080
+            RuntimeEnvironmentVariables:
+              - Name: CARRIER_NAME
+                Value: !Ref CarrierName
+              - Name: AtsHub__CarrierId
+                Value: !Ref CarrierId
+        AutoDeploymentsEnabled: false
+      InstanceConfiguration:
+        Cpu: 1 vCPU
+        Memory: 2 GB
+        InstanceRoleArn: !GetAtt AppRunnerInstanceRole.Arn
+      HealthCheckConfiguration:
+        Protocol: HTTP
+        Path: /health
+        Interval: 10
+        Timeout: 5
+        HealthyThreshold: 1
+        UnhealthyThreshold: 5
+
+  ApiGateway:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub 'carrier-api-gateway-${CarrierId}'
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowOrigins:
+          - '*'
+        AllowMethods:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - OPTIONS
+        AllowHeaders:
+          - '*'
+
+  ApiIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref ApiGateway
+      IntegrationType: HTTP_PROXY
+      IntegrationUri: !Sub 'https://${CarrierApiService.ServiceUrl}'
+      IntegrationMethod: ANY
+      PayloadFormatVersion: '1.0'
+
+  ApiRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiGateway
+      RouteKey: $default
+      Target: !Sub 'integrations/${ApiIntegration}'
+
+  ApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref ApiGateway
+      StageName: $default
+      AutoDeploy: true
+
+Outputs:
+  ApiGatewayUrl:
+    Description: API Gateway URL
+    Value: !GetAtt ApiGateway.ApiEndpoint
+  AppRunnerUrl:
+    Description: AppRunner Service URL
+    Value: !Sub 'https://${CarrierApiService.ServiceUrl}'
+  ServiceArn:
+    Description: AppRunner Service ARN
+    Value: !GetAtt CarrierApiService.ServiceArn

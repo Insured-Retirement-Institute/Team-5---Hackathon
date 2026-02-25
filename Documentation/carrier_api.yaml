@@ -14,7 +14,7 @@ tags:
     description: Agent transfer lifecycle endpoints (MVP)
 
 paths:
-  /ats/transfers:
+  /ats/v1/transfers:
     post:
       tags: [Transfers]
       summary: Create a new agent transfer
@@ -65,7 +65,6 @@ paths:
 
 components:
   schemas:
-    # ===== Requests =====
     TransferCreateRequest:
       type: object
       required: [agent, releasingImo, receivingImo, effectiveDate, consent]
@@ -95,7 +94,6 @@ components:
           maxLength: 2000
           description: Optional free text for carrier processing
 
-    # ===== Responses =====
     TransferCreateResponse:
       type: object
       required: [id, state]
@@ -103,7 +101,6 @@ components:
         id: { type: string, description: Server-assigned transfer id }
         state: { type: string, enum: [SUBMITTED] }
 
-    # ===== Supporting Types =====
     AgentRef:
       type: object
       required: [npn]

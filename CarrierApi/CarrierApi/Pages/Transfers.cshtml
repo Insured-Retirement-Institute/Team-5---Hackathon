@@ -1,0 +1,167 @@
+@page
+@model CarrierApi.Pages.TransfersModel
+@{
+    ViewData["Title"] = "ATS Transfers - " + (Environment.GetEnvironmentVariable("CARRIER_NAME") ?? "American Equity");
+    var carrierName = Environment.GetEnvironmentVariable("CARRIER_NAME") ?? "American Equity";
+    var cssFile = carrierName == "Allianz" ? "transfers-allianz.css" : "transfers.css";
+    var logoFile = carrierName == "Allianz" ? "allianz-logo-header.svg" : "ae-logo-header.svg";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/@cssFile" />
+}
+
+<div class="container">
+    <div class="card" id="waitingCard">
+        <h2>Latest Transfer Request</h2>
+        <div class="transfer-data waiting">Waiting for transfer request...</div>
+    </div>
+
+    <div class="card" id="statusCard" style="display: none;">
+        <h2>Process Transfer Status</h2>
+        <form id="statusForm">
+            <div class="form-group">
+                <label>Agent NPN</label>
+                <input type="text" id="npn" readonly />
+            </div>
+            <div class="form-group">
+                <label>Receiving IMO FEIN</label>
+                <input type="text" id="receivingFein" readonly />
+            </div>
+            <div class="form-group">
+                <label>Releasing IMO FEIN</label>
+                <input type="text" id="releasingFein" readonly />
+            </div>
+            <div class="form-group">
+                <label>Transfer Status</label>
+                <select id="status" class="form-control">
+                    <option value="PENDING">Pending</option>
+                    <option value="COMPLETED">Completed</option>
+                    <option value="REJECTED">Rejected</option>
+                    <option value="CANCELED">Canceled</option>
+                </select>
+            </div>
+            
+            <h3 style="color: #003d7a; font-size: 1.2rem; margin-top: 2rem; margin-bottom: 1rem;">Requirements</h3>
+            <div id="requirementsList"></div>
+            
+            <button type="submit" class="btn">Submit Status Update</button>
+        </form>
+        <div id="statusResult"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script>
+        let currentTransfer = null;
+        const carrierName = '@carrierName';
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/transferHub")
+            .build();
+
+        connection.on("ReceiveTransfer", (transfer) => {
+            currentTransfer = transfer;
+            document.getElementById("waitingCard").style.display = "none";
+            document.getElementById("npn").value = transfer.agent?.npn || '';
+            document.getElementById("receivingFein").value = transfer.receivingImo?.fein || '';
+            document.getElementById("releasingFein").value = transfer.releasingImo?.fein || '';
+            document.getElementById("status").value = "PENDING";
+            
+            if (carrierName === "Allianz") {
+                requirements = [
+                    { code: "LetterOfInstruction", status: "PENDING", details: "" },
+                    { code: "TermsAndConditions", status: "PENDING", details: "" }
+                ];
+            } else {
+                requirements = [
+                    { code: "LetterOfInstruction", status: "PENDING", details: "" }
+                ];
+            }
+            
+            updateRequirementsList();
+            document.getElementById("statusResult").textContent = "";
+            document.getElementById("statusCard").style.display = "block";
+            sendStatus();
+        });
+
+        connection.start()
+            .then(() => console.log("SignalR connected"))
+            .catch(err => console.error("SignalR error:", err));
+
+        let requirements = [];
+        const allRequirementCodes = [
+            { value: "LetterOfInstruction", label: "Letter of Instruction" },
+            { value: "TermsAndConditions", label: "Terms and Conditions" }
+        ];
+
+        function updateRequirementCodeDropdown() {
+            // Not used anymore but kept for compatibility
+        }
+
+        function updateRequirementsList() {
+            const list = document.getElementById("requirementsList");
+            list.innerHTML = requirements.map((r, i) => `
+                <div style="background: white; border: 1px solid #dee2e6; padding: 1rem; margin-bottom: 0.5rem; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
+                    <div><strong>${r.code}</strong> - ${r.status}${r.details ? ' - ' + r.details : ''}</div>
+                    <div>
+                        <button type="button" onclick="completeRequirement(${i})" style="background: #28a745; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; margin-right: 0.5rem;">Complete</button>
+                        <button type="button" onclick="rejectRequirement(${i})" style="background: #dc3545; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">Reject</button>
+                    </div>
+                </div>
+            `).join('');
+            updateRequirementCodeDropdown();
+        }
+
+        window.completeRequirement = function(index) {
+            requirements[index].status = "COMPLETED";
+            requirements[index].details = "";
+            updateRequirementsList();
+            sendStatus();
+        };
+
+        window.rejectRequirement = function(index) {
+            const reason = prompt("Enter rejection reason:");
+            if (reason !== null) {
+                requirements[index].status = "REJECTED";
+                requirements[index].details = reason;
+                updateRequirementsList();
+                sendStatus();
+            }
+        };
+
+        document.getElementById("status").addEventListener("change", sendStatus);
+
+        function sendStatus() {
+            const status = {
+                npn: document.getElementById("npn").value,
+                receivingFein: document.getElementById("receivingFein").value,
+                releasingFein: document.getElementById("releasingFein").value,
+                carrierId: "american-equity",
+                status: document.getElementById("status").value,
+                requirements: requirements
+            };
+            fetch('/ats/v1/status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(status)
+            }).catch(err => console.error("Error sending status:", err));
+        }
+
+        window.removeRequirement = function(index) {
+            requirements.splice(index, 1);
+            updateRequirementsList();
+            sendStatus();
+        };
+
+        document.getElementById("statusForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            sendStatus();
+            const result = document.getElementById("statusResult");
+            result.className = "status-result success";
+            result.textContent = "✓ Status sent successfully";
+            alert("Status sent successfully!");
+        });
+    </script>
+}
