@@ -72,6 +72,16 @@ Resources:
         Timeout: 5
         HealthyThreshold: 1
         UnhealthyThreshold: 5
+      ObservabilityConfiguration:
+        ObservabilityEnabled: true
+        ObservabilityConfigurationArn: !GetAtt XRayObservabilityConfig.ObservabilityConfigurationArn
+
+  XRayObservabilityConfig:
+    Type: AWS::AppRunner::ObservabilityConfiguration
+    Properties:
+      ObservabilityConfigurationName: !Sub 'carrier-api-xray-${CarrierId}'
+      TraceConfiguration:
+        Vendor: AWSXRAY
 
   ApiGateway:
     Type: AWS::ApiGatewayV2::Api
