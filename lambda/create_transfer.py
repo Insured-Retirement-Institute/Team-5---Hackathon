@@ -208,7 +208,7 @@ def lambda_handler(event, context):
             "statusCode": 201,
             "headers": {
                 "Content-Type": "application/json",
-                "Location": f"/ats/transfers/{key}",
+                "Location": f"/ats/v1/transfers/{key}",
                 "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Headers": "Content-Type,Idempotency-Key",
             },
