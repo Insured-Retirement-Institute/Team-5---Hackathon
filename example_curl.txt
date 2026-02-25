@@ -26,3 +26,5 @@ curl -X GET "https://21yem0s5jl.execute-api.us-east-1.amazonaws.com/prod/ats/v1/
 --update contracts
 curl -X POST "https://21yem0s5jl.execute-api.us-east-1.amazonaws.com/prod/ats/v1/contracts/update-fein" -H "Content-Type: application/json" -d '{"carrierId":"carrier_001","npn":"111","releasingFein":"12-3456789","receivingFein":"33-3333333"}'
 
+--get transfers
+curl https://21yem0s5jl.execute-api.us-east-1.amazonaws.com/prod/ats/v1/transfers/12-3456789

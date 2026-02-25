@@ -33,6 +33,8 @@ def lambda_handler(event, context):
         )
         items.extend(result.get("Items", []))
 
+    transfers = [dynamo_record_to_carrier_body(item) for item in items]
+
     return {
         "statusCode": 200,
         "headers": {
@@ -40,5 +42,35 @@ def lambda_handler(event, context):
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Headers": "Content-Type,Idempotency-Key",
         },
-        "body": json.dumps(items),
+        "body": json.dumps(transfers),
     }
+
+
+def dynamo_record_to_carrier_body(record):
+    agent = {"npn": record["agentNpn"]}
+    if "agentFirstName" in record:
+        agent["firstName"] = record["agentFirstName"]
+    if "agentLastName" in record:
+        agent["lastName"] = record["agentLastName"]
+
+    consent = {"agentAttestation": record.get("agentAttestation", False)}
+    if "eSignatureRef" in record:
+        consent["eSignatureRef"] = record["eSignatureRef"]
+
+    body = {
+        "agent": agent,
+        "releasingImo": {
+            "fein": record["releasingImoFein"],
+            "name": record["releasingImoName"],
+        },
+        "receivingImo": {
+            "fein": record["receivingImoFein"],
+            "name": record["receivingImoName"],
+        },
+        "effectiveDate": record["effectiveDate"],
+        "consent": consent,
+    }
+    if "notes" in record:
+        body["notes"] = record["notes"]
+
+    return body
