@@ -1,0 +1,19 @@
+{
+  "agentNpn": "17439285",
+  "targetImo": {
+    "name": "Summit IMO",
+    "fein": "98-7654321"
+  },
+  "selectedCarrierIds": ["carrier_001"],
+  "selectedBookIds": ["bob_1001_A"],
+  "effectiveDate": "2026-06-01",
+  "requirementAnswers": {
+    "releaseLetterProvided": true,
+    "signedTransferPacketProvided": true,
+    "daysInCurrentHierarchy": 365
+  },
+  "attestation": {
+    "agentApproved": true,
+    "acknowledgedAt": "2026-02-25T14:00:00Z"
+  }
+}
