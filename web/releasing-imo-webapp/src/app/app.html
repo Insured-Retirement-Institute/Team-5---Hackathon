@@ -1,6 +1,20 @@
 @if (auth.isLoggedIn()) {
   <app-top-menu />
 }
+<div class="marquee-bar" aria-hidden="true">
+  <span class="marquee-text rainbow">*** Welcome to the Initrode IMO Intranet!!! Your #1 source for IMO business management! Last updated: Feb 25, 2001 ***</span>
+</div>
 <main>
   <router-outlet />
 </main>
+<footer class="retro-footer">
+  <div class="retro-divider"></div>
+  <div class="footer-content">
+    <span class="blink">NEW!</span>&nbsp;
+    <span>Best viewed in <b>Internet Explorer 5.5</b> at <b>800x600</b> resolution</span>
+    <br>
+    <span>You are visitor number: <b>000{{ visitorCount }}</b></span>
+    <br>
+    <small>&copy; 2001 Initrode IMO. All rights reserved. | <a href="#">Guestbook</a> | <a href="#">Webmaster</a></small>
+  </div>
+</footer>

@@ -11,4 +11,5 @@ import { TopMenuComponent } from './layout/top-menu/top-menu.component';
 })
 export class App {
   protected readonly auth = inject(AuthService);
+  visitorCount = Math.floor(Math.random() * 900) + 100;
 }

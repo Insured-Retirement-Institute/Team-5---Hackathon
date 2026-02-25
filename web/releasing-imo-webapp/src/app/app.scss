@@ -3,10 +3,43 @@
   flex-direction: column;
   min-height: 100vh;
   font-family: var(--font-family);
+  background: #C0C0C0;
+}
+
+.marquee-bar {
+  background: #000080;
+  color: #FFFF00;
+  padding: 4px 0;
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: bold;
+  border-top: 2px solid #FFFFFF;
+  border-bottom: 2px solid #808080;
 }
 
 main {
   flex: 1;
   display: flex;
   flex-direction: column;
+}
+
+.retro-footer {
+  padding: 8px 16px;
+  text-align: center;
+  font-size: 11px;
+  color: #333333;
+  background: #C0C0C0;
+
+  a {
+    color: #0000FF;
+    font-size: 11px;
+    &:hover {
+      color: #FF0000;
+    }
+  }
+}
+
+.footer-content {
+  padding: 8px 0;
+  line-height: 1.8;
 }

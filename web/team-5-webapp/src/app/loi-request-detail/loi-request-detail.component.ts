@@ -75,6 +75,13 @@ export class LoiRequestDetailComponent implements OnInit {
     return allCarriers.find((c) => c.carrierId === carrierId)?.name ?? carrierId;
   }
 
+  /** True when every item in the group has status INITIATED (waiting on Releasing IMO). */
+  get allItemsInitiated(): boolean {
+    const items = this.groupItems();
+    if (!items || items.length === 0) return false;
+    return items.every((item) => item.status === 'INITIATED');
+  }
+
   get supportingDoc(): { fileName: string; data: string } | null {
     const fein = this.groupItems()?.[0]?.releasingFein;
     const npn = this.groupItems()?.[0]?.npn;

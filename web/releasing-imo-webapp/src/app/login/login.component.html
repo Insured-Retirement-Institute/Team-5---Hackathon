@@ -1,38 +1,37 @@
 <div class="login-wrapper">
   <div class="login-card">
-    <div class="login-header">
-      <div class="login-logo">
-        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-          <rect width="40" height="40" rx="10" fill="var(--color-primary)"/>
-          <path d="M12 20l5 5 11-11" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+    <div class="title-bar">
+      <span class="title-bar-text">&#128274; Log On to Initrode IMO Network</span>
+      <div class="title-bar-controls">
+        <span class="title-btn">_</span>
+        <span class="title-btn">&#9633;</span>
+        <span class="title-btn">X</span>
       </div>
-      <h1>Welcome back</h1>
-      <p class="subtitle">Sign in to your Current IMO account</p>
     </div>
-    <form [formGroup]="form" (ngSubmit)="onSubmit()">
-      <div class="field">
-        <label for="username">Username</label>
-        <input id="username" type="text" formControlName="username" autocomplete="username" placeholder="Enter your username" />
+    <div class="login-body">
+      <div class="login-header">
+        <img src="/images/CurrentIMOLogo.png" alt="Initrode" height="48" style="border: 2px inset #D4D0C8;" />
+        <p class="subtitle">Enter your network credentials to continue.</p>
       </div>
-      <div class="field">
-        <label for="password">Password</label>
-        <input id="password" type="password" formControlName="password" autocomplete="current-password" placeholder="Enter your password" />
-      </div>
-      @if (loginError()) {
-        <div class="error-banner" role="alert">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
-          </svg>
-          {{ loginError() }}
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <div class="field">
+          <label for="username">User name:</label>
+          <input id="username" type="text" formControlName="username" autocomplete="username" />
         </div>
-      }
-      <button type="submit" [disabled]="form.invalid">
-        Sign in
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-        </svg>
-      </button>
-    </form>
+        <div class="field">
+          <label for="password">Password:</label>
+          <input id="password" type="password" formControlName="password" autocomplete="current-password" />
+        </div>
+        @if (loginError()) {
+          <div class="error-banner" role="alert">
+            &#9888; {{ loginError() }}
+          </div>
+        }
+        <div class="button-row">
+          <button type="submit" class="win98-btn" [disabled]="form.invalid">OK</button>
+          <button type="button" class="win98-btn">Cancel</button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>

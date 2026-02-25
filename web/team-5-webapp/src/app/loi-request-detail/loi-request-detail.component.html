@@ -42,51 +42,59 @@
       </section>
 
       <section class="carrier-section">
-        <h2 class="section-header">
-          Carrier Statuses
-        </h2>
-        <div class="table-wrapper">
-          <table class="carrier-status-table">
-            <thead>
-              <tr>
-                <th>Carrier</th>
-                <th>Status</th>
-                <th>Requirements</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (item of groupItems()!; track $index) {
+        @if (allItemsInitiated) {
+          <p class="waiting-message">Waiting on Releasing IMO. Once released, the requests will be sent to the appropriate carriers, and you will see them here.</p>
+        } @else {
+          <h2 class="section-header">
+            Carrier Statuses
+          </h2>
+          <div class="table-wrapper">
+            <table class="carrier-status-table">
+              <thead>
                 <tr>
-                  <td class="carrier-name">{{ carrierName(item.carrierId) }}</td>
-                  <td>
-                    <span class="status-badge" [class.status-active]="item.status === 'ACTIVE'" [class.status-complete]="item.status !== 'ACTIVE'">
-                      {{ formatStatus(item.status) }}
-                    </span>
-                  </td>
-                  <td>
-                    @if (item.requirements && item.requirements.length > 0) {
-                      <ul class="requirements-list">
-                        @for (req of item.requirements; track req.code) {
-                          <li class="requirement-item">
-                            <span class="requirement-code">{{ formatRequirementCode(req.code) }}</span>
-                            <span class="req-status-badge"
-                              [class.req-satisfied]="req.status === 'SATISFIED'"
-                              [class.req-open]="req.status === 'OPEN'">
-                              {{ formatStatus(req.status) }}
-                            </span>
-                            <span class="requirement-details">{{ req.details }}</span>
-                          </li>
-                        }
-                      </ul>
-                    } @else {
-                      <span class="no-requirements">None</span>
-                    }
-                  </td>
+                  <th>Carrier</th>
+                  <th>Status</th>
+                  <th>Requirements</th>
                 </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                @for (item of groupItems()!; track $index) {
+                  <tr>
+                    <td class="carrier-name">{{ carrierName(item.carrierId) }}</td>
+                    <td>
+                      <span class="status-badge"
+                        [class.status-completed]="item.status === 'COMPLETED'"
+                        [class.status-canceled]="item.status === 'CANCELED'"
+                        [class.status-rejected]="item.status === 'REJECTED'">
+                        {{ formatStatus(item.status) }}
+                      </span>
+                    </td>
+                    <td>
+                      @if (item.requirements && item.requirements.length > 0) {
+                        <ul class="requirements-list">
+                          @for (req of item.requirements; track req.code) {
+                            <li class="requirement-item">
+                              <span class="requirement-code">{{ formatRequirementCode(req.code) }}</span>
+                              <span class="req-status-badge"
+                                [class.req-completed]="req.status === 'COMPLETED'"
+                                [class.req-canceled]="req.status === 'CANCELED'"
+                                [class.req-rejected]="req.status === 'REJECTED'">
+                                {{ formatStatus(req.status) }}
+                              </span>
+                              <span class="requirement-details">{{ req.details }}</span>
+                            </li>
+                          }
+                        </ul>
+                      } @else {
+                        <span class="no-requirements">None</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
       </section>
     </div>
   } @else {

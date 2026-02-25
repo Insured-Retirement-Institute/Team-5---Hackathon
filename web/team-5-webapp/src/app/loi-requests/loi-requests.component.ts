@@ -7,7 +7,7 @@ export interface LoiRequestRow {
   agentName: string;
   npn: string;
   releasingImoName: string;
-  status: 'Pending' | 'Completed' | 'Rejected' | 'Initiated';
+  status: string;
   groupItems: LoiRequestStatusItem[];
 }
 
