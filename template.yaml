@@ -101,7 +101,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref AtsApi
-            Path: /ats/transfers
+            Path: /ats/v1/transfers
             Method: GET
 
   CreateTransferFunction:
@@ -114,7 +114,9 @@ Resources:
         Variables:
           TRANSFERS_TABLE: !Ref TransfersTable
           AGENT_TABLE: !Ref AgentTable
-          FORWARD_API_URL: "https://plwlku50il.execute-api.us-east-1.amazonaws.com/prod/ats/transfers" # TODO: set to the target API URL
+          FORWARD_API_URL_ALLIANZ: "https://mj8skppu81.execute-api.us-east-1.amazonaws.com/ats/v1/transfers"  # TODO: set to the target API URL
+          FORWARD_API_URL_AE: "https://9f6yrhcul7.execute-api.us-east-1.amazonaws.com/ats/v1/transfers"  # TODO: set to the target API URL
+          SET_STATUS_URL: "https://21yem0s5jl.execute-api.us-east-1.amazonaws.com/prod/ats/v1/status"
       Policies:
         - DynamoDBWritePolicy:
             TableName: !Ref TransfersTable
@@ -125,7 +127,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref AtsApi
-            Path: /ats/transfers
+            Path: /ats/v1/transfers
             Method: POST
 
   GetTransferFunction:
@@ -134,12 +136,18 @@ Resources:
       CodeUri: lambda/
       Handler: get_transfer.lambda_handler
       Description: GET /ats/transfers/{id} — Get transfer details by id
+      Environment:
+        Variables:
+          TRANSFERS_TABLE: !Ref TransfersTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref TransfersTable
       Events:
         GetTransfer:
           Type: Api
           Properties:
             RestApiId: !Ref AtsApi
-            Path: /ats/transfers/{id}
+            Path: /ats/v1/transfers/{id}
             Method: GET
 
   PatchTransferFunction:
@@ -153,7 +161,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref AtsApi
-            Path: /ats/transfers/{id}
+            Path: /ats/v1/transfers/{id}
             Method: PATCH
 
   SetStatusFunction:
@@ -165,7 +173,7 @@ Resources:
       Environment:
         Variables:
           STATUS_TABLE: !Ref StatusTable
-          UPDATE_CONTRACTS_FEIN_URL: "https://21yem0s5jl.execute-api.us-east-1.amazonaws.com/prod/ats/contracts/update-fein"
+          UPDATE_CONTRACTS_FEIN_URL: "https://21yem0s5jl.execute-api.us-east-1.amazonaws.com/prod/ats/v1/contracts/update-fein"
       Policies:
         - DynamoDBWritePolicy:
             TableName: !Ref StatusTable
@@ -174,7 +182,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref AtsApi
-            Path: /ats/status
+            Path: /ats/v1/status
             Method: POST
 
   GetStatusesFunction:
@@ -197,7 +205,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref AtsApi
-            Path: /ats/status/{fein}
+            Path: /ats/v1/status/{fein}
             Method: GET
 
   GetContractsFunction:
@@ -209,15 +217,18 @@ Resources:
       Environment:
         Variables:
           CONTRACTS_TABLE: !Ref ContractsTable
+          AGENT_TABLE: !Ref AgentTable
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref ContractsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref AgentTable
       Events:
         GetContracts:
           Type: Api
           Properties:
             RestApiId: !Ref AtsApi
-            Path: /ats/contracts/{fein}
+            Path: /ats/v1/contracts/{fein}
             Method: GET
 
   UpdateContractsFeinFunction:
@@ -239,7 +250,32 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref AtsApi
-            Path: /ats/contracts/update-fein
+            Path: /ats/v1/contracts/update-fein
+            Method: POST
+            
+  ReleaseTransferToCarriersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/
+      Handler: release_transfer_to_carriers.lambda_handler
+      Description: POST /ats/v1/transfers/{id}/release — Release a transfer to carrier APIs
+      Environment:
+        Variables:
+          TRANSFERS_TABLE: !Ref TransfersTable
+          STATUS_TABLE: !Ref StatusTable
+          FORWARD_API_URL_ALLIANZ: "https://mj8skppu81.execute-api.us-east-1.amazonaws.com/ats/v1/transfers"
+          FORWARD_API_URL_AE: "https://9f6yrhcul7.execute-api.us-east-1.amazonaws.com/ats/v1/transfers"
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref TransfersTable
+        - DynamoDBWritePolicy:
+            TableName: !Ref StatusTable
+      Events:
+        ReleaseTransferToCarriers:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AtsApi
+            Path: /ats/v1/transfers/{id}/release
             Method: POST
 
   ListAgentsFunction:
