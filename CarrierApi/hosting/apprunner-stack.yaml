@@ -17,6 +17,30 @@ Parameters:
     Description: Carrier ID for ATS Hub
 
 Resources:
+  AmericanEquityRequestsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: carrier-american-equity-requests
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: Id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: Id
+          KeyType: HASH
+
+  AllianzRequestsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: carrier-allianz-requests
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: Id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: Id
+          KeyType: HASH
+
   AppRunnerInstanceRole:
     Type: AWS::IAM::Role
     Properties:
@@ -29,6 +53,20 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+      Policies:
+        - PolicyName: DynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:Scan
+                  - dynamodb:Query
+                Resource:
+                  - !GetAtt AmericanEquityRequestsTable.Arn
+                  - !GetAtt AllianzRequestsTable.Arn
 
   AppRunnerAccessRole:
     Type: AWS::IAM::Role
@@ -72,6 +110,16 @@ Resources:
         Timeout: 5
         HealthyThreshold: 1
         UnhealthyThreshold: 5
+      ObservabilityConfiguration:
+        ObservabilityEnabled: true
+        ObservabilityConfigurationArn: !GetAtt XRayObservabilityConfig.ObservabilityConfigurationArn
+
+  XRayObservabilityConfig:
+    Type: AWS::AppRunner::ObservabilityConfiguration
+    Properties:
+      ObservabilityConfigurationName: !Sub 'carrier-api-xray-${CarrierId}'
+      TraceConfiguration:
+        Vendor: AWSXRAY
 
   ApiGateway:
     Type: AWS::ApiGatewayV2::Api

@@ -22,7 +22,6 @@ services.AddControllers()
     });
 
 services.AddRazorPages();
-services.AddSignalR();
 services.AddEndpointsApiExplorer();
 services.AddSwaggerGen();
 
@@ -35,5 +34,4 @@ app.UseSwagger();
 app.UseSwaggerUI();
 app.MapControllers();
 app.MapRazorPages();
-app.MapHub<CarrierApi.Hubs.TransferHub>("/transferHub");
 app.Run();
