@@ -1,22 +1,29 @@
 using CarrierApi.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
-using CarrierApi.Hubs;
+using CarrierApi.Clients.TransferRepo;
 
 namespace CarrierApi.Controllers;
 
 [ApiController]
 [Route("ats/v1/transfers")]
-public class TransfersController(IHubContext<TransferHub> hubContext) : ControllerBase
+public class TransfersController(ITransferRepository repository) : ControllerBase
 {
     [HttpPost]
     public async Task<ActionResult<TransferResponse>> CreateTransfer([FromBody] TransferRequest request)
     {
-        await hubContext.Clients.All.SendAsync("ReceiveTransfer", request);
+        var id = Guid.NewGuid().ToString();
+        await repository.SaveTransferAsync(id, request);
         return Ok(new TransferResponse 
         { 
-            Id = Guid.NewGuid().ToString(),
+            Id = id,
             State = "Submitted"
         });
+    }
+
+    [HttpGet]
+    public async Task<ActionResult> GetRecentTransfers()
+    {
+        var transfers = await repository.GetRecentTransfersAsync();
+        return Ok(transfers.Select(t => new { t.Id, t.Timestamp, t.Request }));
     }
 }

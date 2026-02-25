@@ -12,9 +12,9 @@
 }
 
 <div class="container">
-    <div class="card" id="waitingCard">
-        <h2>Latest Transfer Request</h2>
-        <div class="transfer-data waiting">Waiting for transfer request...</div>
+    <div class="card">
+        <h2>Recent Transfer Requests</h2>
+        <div id="transfersList"></div>
     </div>
 
     <div class="card" id="statusCard" style="display: none;">
@@ -52,21 +52,36 @@
 </div>
 
 @section Scripts {
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
     <script>
         let currentTransfer = null;
         const carrierName = '@carrierName';
 
-        const connection = new signalR.HubConnectionBuilder()
-            .withUrl("/transferHub")
-            .build();
+        async function loadTransfers() {
+            const response = await fetch('/ats/v1/transfers');
+            const transfers = await response.json();
+            const list = document.getElementById('transfersList');
+            
+            if (transfers.length === 0) {
+                list.innerHTML = '<div style="padding: 1rem; color: #666;">No transfer requests yet</div>';
+                return;
+            }
+            
+            list.innerHTML = transfers.map(t => `
+                <div style="background: white; border: 1px solid #dee2e6; padding: 1rem; margin-bottom: 0.5rem; border-radius: 4px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.1);"
+                     onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)';"
+                     onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)';"
+                     onclick="selectTransfer('${t.id}', ${t.timestamp}, ${JSON.stringify(t.request).replace(/"/g, '&quot;')})">
+                    <strong>NPN: ${t.request.agent?.npn || 'N/A'}</strong> - 
+                    ${new Date(t.timestamp * 1000).toLocaleString()}
+                </div>
+            `).join('');
+        }
 
-        connection.on("ReceiveTransfer", (transfer) => {
-            currentTransfer = transfer;
-            document.getElementById("waitingCard").style.display = "none";
-            document.getElementById("npn").value = transfer.agent?.npn || '';
-            document.getElementById("receivingFein").value = transfer.receivingImo?.fein || '';
-            document.getElementById("releasingFein").value = transfer.releasingImo?.fein || '';
+        window.selectTransfer = function(id, timestamp, request) {
+            currentTransfer = { id, timestamp, request };
+            document.getElementById("npn").value = request.agent?.npn || '';
+            document.getElementById("receivingFein").value = request.receivingImo?.fein || '';
+            document.getElementById("releasingFein").value = request.releasingImo?.fein || '';
             document.getElementById("status").value = "PENDING";
             
             if (carrierName === "Allianz") {
@@ -84,21 +99,12 @@
             document.getElementById("statusResult").textContent = "";
             document.getElementById("statusCard").style.display = "block";
             sendStatus();
-        });
+        };
 
-        connection.start()
-            .then(() => console.log("SignalR connected"))
-            .catch(err => console.error("SignalR error:", err));
+        setInterval(loadTransfers, 3000);
+        loadTransfers();
 
         let requirements = [];
-        const allRequirementCodes = [
-            { value: "LetterOfInstruction", label: "Letter of Instruction" },
-            { value: "TermsAndConditions", label: "Terms and Conditions" }
-        ];
-
-        function updateRequirementCodeDropdown() {
-            // Not used anymore but kept for compatibility
-        }
 
         function updateRequirementsList() {
             const list = document.getElementById("requirementsList");
@@ -111,7 +117,6 @@
                     </div>
                 </div>
             `).join('');
-            updateRequirementCodeDropdown();
         }
 
         window.completeRequirement = function(index) {
@@ -148,12 +153,6 @@
                 body: JSON.stringify(status)
             }).catch(err => console.error("Error sending status:", err));
         }
-
-        window.removeRequirement = function(index) {
-            requirements.splice(index, 1);
-            updateRequirementsList();
-            sendStatus();
-        };
 
         document.getElementById("statusForm").addEventListener("submit", async (e) => {
             e.preventDefault();
