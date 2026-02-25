@@ -29,21 +29,21 @@ curl -s http://localhost:8010/ats/agents | jq
 ### Get agent transfer details
 
 ```bash
-curl -s http://localhost:8010/ats/agents/agt_1001/transfer | jq
+curl -s http://localhost:8010/ats/agents/agt_1001/validate | jq
 ```
 
 ### Validate transfer payload
 
 ```bash
-curl -s -X POST http://localhost:8010/ats/agents/agt_1001/transfer \
+curl -s -X POST http://localhost:8010/ats/agents/agt_1001/validate \
   -H 'Content-Type: application/json' \
   --data @lambda/agents/examples/transfer-agt-1001-valid.json | jq
 
-curl -s -X POST http://localhost:8010/ats/agents/agt_1002/transfer \
+curl -s -X POST http://localhost:8010/ats/agents/agt_1002/validate \
   -H 'Content-Type: application/json' \
   --data @lambda/agents/examples/transfer-agt-1002-valid.json | jq
 
-curl -s -X POST http://localhost:8010/ats/agents/agt_1001/transfer \
+curl -s -X POST http://localhost:8010/ats/agents/agt_1001/validate \
   -H 'Content-Type: application/json' \
   --data @lambda/agents/examples/transfer-agt-1001-invalid.json | jq
 ```

@@ -63,7 +63,7 @@ async def list_agents(request: Request):
     )
 
 
-@app.get("/ats/agents/{id}/transfer")
+@app.get("/ats/agents/{id}/validate")
 async def get_agent_transfer(id: str, request: Request):
     headers = dict(request.headers)
     return _invoke_lambda(
@@ -74,7 +74,7 @@ async def get_agent_transfer(id: str, request: Request):
     )
 
 
-@app.post("/ats/agents/{id}/transfer")
+@app.post("/ats/agents/{id}/validate")
 async def post_agent_transfer(id: str, request: Request, payload: dict[str, Any] = Body(...)):
     headers = dict(request.headers)
     return _invoke_lambda(

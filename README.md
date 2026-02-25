@@ -25,8 +25,8 @@ Status endpoints:
 Agent transfer endpoints:
 
 - `GET /ats/agents` -> `lambda/agents/list_agents.lambda_handler`
-- `GET /ats/agents/{id}/transfer` -> `lambda/agents/get_agent_transfer.lambda_handler`
-- `POST /ats/agents/{id}/transfer` -> `lambda/agents/post_agent_transfer.lambda_handler`
+- `GET /ats/agents/{id}/validate` -> `lambda/agents/get_agent_transfer.lambda_handler`
+- `POST /ats/agents/{id}/validate` -> `lambda/agents/post_agent_transfer.lambda_handler`
 
 Related files:
 

@@ -260,7 +260,7 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/AgentListItem" }
 
-  /ats/agents/{id}/transfer:
+  /ats/agents/{id}/validate:
     get:
       tags: [Agents]
       summary: Get transfer requirements and payload contract for an agent
