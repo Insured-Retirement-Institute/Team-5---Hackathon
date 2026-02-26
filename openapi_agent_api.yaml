@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: 3.1.0
 info:
   title: Agent Transfer Standard (ATS) — IMO-to-Carrier MVP API
   version: 0.1.0
