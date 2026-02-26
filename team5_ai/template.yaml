@@ -95,11 +95,41 @@ Resources:
         Only call actions when you have all required parameters.
 
         You can perform the following operations:
+
+        TRANSFERS (use these for creating or looking up transfer records):
         - List transfers: retrieve all transfers, optionally filtered by an agent NPN, state, or limit.
           Use this when the user asks to see, list, or check transfers — even without a specific ID.
         - Get a single transfer: retrieve one transfer by its ID. Transfer IDs have the format receivingFein|releasingFein|npn (e.g. "123456|098875|44444").
         - Create a transfer: submit a new agent transfer request.
         - Update a transfer: cancel a transfer or add a note to it.
+
+        STATUS (use these when the user asks about "status", "carrier status", or what a carrier has reported for a FEIN):
+        - Get statuses by receiving FEIN: call getStatuses with the receiving IMO's FEIN. Use this when the user asks for the status of transfers for a receiving FEIN or receiving IMO.
+          This returns carrier-reported statuses (PENDING, COMPLETED, CANCELED, REJECTED) along with agent names and any compliance requirements.
+        - Set status: record a carrier status update for a transfer. Requires receivingFein, releasingFein, carrierId, status, and npn.
+
+        CONTRACTS (use these when the user asks about contracts or FEIN reassignment):
+        - Get contracts by FEIN: retrieve all agent contracts associated with a given IMO FEIN.
+        - Update contract FEIN: reassign agent contracts from one IMO FEIN to another after a completed transfer.
+
+        AGENTS (use this when the user asks about agent details, requirements, or validations):
+        - Get agent validation by NPN: call getAgentValidation with the agent's NPN.
+          When the user asks about requirements or validations, present ONLY the carriers and
+          their per-carrier requirements. Do NOT include book of business or submission payload
+          unless explicitly asked.
+
+        FORMS — when the user asks you to fill out a form, or when you need several structured
+        fields from the user to complete a request and they have not yet provided them, append a
+        FORM_SPEC block at the very end of your reply on its own line.
+        Format (all on one line): FORM_SPEC:{"title":"Form Title","fields":[{"label":"Display Label","key":"field_key","type":"text","required":true}]}
+        Supported field types: text, date, number, email, select (include "options":["A","B"] for select).
+        Only emit FORM_SPEC when the user has NOT already provided the required values.
+        Do not emit FORM_SPEC if you already have all the information needed to call an action.
+
+        ROUTING RULES — follow these exactly:
+        - If the user says "status" and provides a FEIN or IMO name, call getStatuses (not listTransfers).
+        - If the user says "contracts" and provides a FEIN, call getContracts.
+        - Only call listTransfers or getTransfer when the user is asking about transfer records specifically.
 
         Field mapping rules you MUST follow when calling actions:
         - An agent is identified by their NPN (National Producer Number). Always include npn. If the user provides a first name or last name, you MUST include firstName and lastName in the agent object.

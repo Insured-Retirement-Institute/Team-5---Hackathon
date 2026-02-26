@@ -1,3 +1,4 @@
 flask
 asgiref
 mangum
+python-docx

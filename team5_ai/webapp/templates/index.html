@@ -3,494 +3,583 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ATS Portal — Agent Transfer Assistant</title>
+  <title>ATS — Transfer Assistant</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --navy:      #0f2044;
-      --navy-mid:  #162d5e;
-      --navy-lite: #1e3a73;
-      --accent:    #2f80ed;
-      --accent-h:  #1a6ed8;
-      --sidebar-w: 220px;
-      --header-h:  56px;
+      --navy:    #0f2044;
+      --accent:  #2f80ed;
+      --accent-h:#1a6ed8;
+      --bg:      #f0eaf8;
     }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f4f6f9;
+      background: var(--bg);
       height: 100vh;
       display: flex;
       flex-direction: column;
+      align-items: center;
       overflow: hidden;
       color: #1a1a2e;
     }
 
-    /* ── Top header ────────────────────────────────────────────────── */
-    .top-header {
-      height: var(--header-h);
+    /* ── Animated background blobs ── */
+    .bg-blobs {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(70px);
+      opacity: 0.28;
+    }
+    .blob-1 {
+      width: 520px; height: 520px;
+      background: radial-gradient(circle, #d8b4fe, #c084fc);
+      top: -120px; left: -100px;
+      animation: blob-drift-1 14s ease-in-out infinite;
+    }
+    .blob-2 {
+      width: 440px; height: 440px;
+      background: radial-gradient(circle, #f9a8d4, #f472b6);
+      top: 10%; right: -80px;
+      animation: blob-drift-2 17s ease-in-out infinite;
+    }
+    .blob-3 {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, #e879f9, #a855f7);
+      bottom: -60px; left: 20%;
+      animation: blob-drift-3 20s ease-in-out infinite;
+    }
+    .blob-4 {
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, #fda4af, #fb7185);
+      bottom: 15%; right: 10%;
+      animation: blob-drift-4 12s ease-in-out infinite;
+    }
+
+    @keyframes blob-drift-1 {
+      0%,100% { transform: translate(0px,   0px)  scale(1);    }
+      33%      { transform: translate(60px,  80px) scale(1.08); }
+      66%      { transform: translate(-30px, 50px) scale(0.94); }
+    }
+    @keyframes blob-drift-2 {
+      0%,100% { transform: translate(0px,   0px)   scale(1);    }
+      33%      { transform: translate(-70px, 60px)  scale(1.06); }
+      66%      { transform: translate(40px,  -50px) scale(0.96); }
+    }
+    @keyframes blob-drift-3 {
+      0%,100% { transform: translate(0px,   0px)   scale(1);    }
+      40%      { transform: translate(80px,  -70px) scale(1.1);  }
+      70%      { transform: translate(-40px, -30px) scale(0.92); }
+    }
+    @keyframes blob-drift-4 {
+      0%,100% { transform: translate(0px,  0px)   scale(1);    }
+      50%      { transform: translate(-60px,-50px) scale(1.12); }
+    }
+
+    /* ensure everything sits above blobs */
+    .header, .center { position: relative; z-index: 1; }
+
+    /* ── Header ── */
+    .header {
+      width: 100%;
+      padding: 0 28px;
+      height: 52px;
       background: var(--navy);
       display: flex;
       align-items: center;
-      padding: 0 20px;
-      gap: 12px;
+      gap: 10px;
       flex-shrink: 0;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-      z-index: 10;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
     }
-
     .logo-mark {
-      width: 32px; height: 32px;
+      width: 30px; height: 30px;
       background: var(--accent);
-      border-radius: 8px;
+      border-radius: 7px;
       display: flex; align-items: center; justify-content: center;
-      font-weight: 800; font-size: 15px; color: #fff;
-      letter-spacing: -1px;
-      flex-shrink: 0;
+      font-weight: 800; font-size: 13px; color: #fff;
+      letter-spacing: -0.5px;
     }
-
-    .logo-text {
-      color: #fff;
-      font-size: 16px;
-      font-weight: 600;
-      letter-spacing: 0.3px;
-    }
+    .logo-text { color: #fff; font-size: 15px; font-weight: 600; }
     .logo-text span { color: #7eb8f7; font-weight: 400; }
-
-    .header-divider { flex: 1; }
-
-    .header-badge {
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.15);
-      color: #c8d8f0;
-      font-size: 12px;
-      padding: 4px 10px;
-      border-radius: 20px;
+    .header-spacer { flex: 1; }
+    .status-dot {
+      font-size: 12px; color: #7eb8f7;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .status-dot::before {
+      content: ''; width: 7px; height: 7px;
+      background: #34c759; border-radius: 50%;
+      display: inline-block; box-shadow: 0 0 4px #34c759;
     }
 
-    .header-avatar {
-      width: 32px; height: 32px;
-      border-radius: 50%;
-      background: var(--navy-lite);
-      border: 2px solid rgba(255,255,255,0.2);
-      display: flex; align-items: center; justify-content: center;
-      color: #90b8e8; font-size: 13px; font-weight: 600;
-    }
-
-    /* ── Body below header ─────────────────────────────────────────── */
-    .body-wrap {
-      display: flex;
+    /* ── Center row layout ── */
+    .center {
       flex: 1;
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      width: 100%;
+      padding: 20px 28px 20px 24px;
+      gap: 28px;
       overflow: hidden;
+      min-height: 0;
     }
 
-    /* ── Sidebar ───────────────────────────────────────────────────── */
-    .sidebar {
-      width: var(--sidebar-w);
-      background: var(--navy-mid);
-      display: flex;
-      flex-direction: column;
+    /* ── Left panel (orb + heading) ── */
+    .left-panel {
+      width: 190px;
       flex-shrink: 0;
-      padding: 16px 0;
-      overflow-y: auto;
-    }
-
-    .nav-section-label {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 1.2px;
-      text-transform: uppercase;
-      color: #5a7aab;
-      padding: 18px 20px 6px;
-    }
-    .nav-section-label:first-child { padding-top: 4px; }
-
-    .nav-item {
-      display: flex;
-      align-items: center;
-      gap: 11px;
-      padding: 9px 20px;
-      color: #90afd4;
-      font-size: 13.5px;
-      cursor: pointer;
-      border-left: 3px solid transparent;
-      transition: background 0.15s, color 0.15s;
-      user-select: none;
-    }
-    .nav-item:hover {
-      background: rgba(255,255,255,0.06);
-      color: #dce8f8;
-    }
-    .nav-item.active {
-      background: rgba(47,128,237,0.15);
-      border-left-color: var(--accent);
-      color: #fff;
-    }
-    .nav-item svg { flex-shrink: 0; opacity: 0.8; }
-    .nav-item.active svg { opacity: 1; }
-
-    .nav-badge {
-      margin-left: auto;
-      background: var(--accent);
-      color: #fff;
-      font-size: 10px;
-      font-weight: 700;
-      padding: 1px 6px;
-      border-radius: 10px;
-    }
-
-    .sidebar-footer {
-      margin-top: auto;
-      padding: 16px 20px;
-      border-top: 1px solid rgba(255,255,255,0.07);
-    }
-    .sidebar-user {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      color: #7a9cc4;
-      font-size: 12.5px;
-    }
-    .sidebar-user-avatar {
-      width: 28px; height: 28px;
-      border-radius: 50%;
-      background: var(--navy-lite);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 11px; font-weight: 700; color: #90b8e8;
-      flex-shrink: 0;
-    }
-    .sidebar-user-name { font-weight: 600; color: #b0c8e8; }
-    .sidebar-user-role { font-size: 11px; color: #5a7aab; }
-
-    /* ── Main content ──────────────────────────────────────────────── */
-    .main {
-      flex: 1;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
-      padding: 24px;
-      gap: 16px;
-    }
-
-    .page-title {
-      display: flex;
       align-items: center;
-      gap: 10px;
-    }
-    .page-title h2 {
-      font-size: 18px;
-      font-weight: 700;
-      color: #0f2044;
-    }
-    .page-title p {
-      font-size: 13px;
-      color: #6b7a99;
-      margin-top: 2px;
-    }
-
-    .status-pills {
-      display: flex;
-      gap: 8px;
-      margin-left: auto;
-      align-items: center;
-    }
-    .pill {
-      font-size: 12px;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-weight: 500;
-    }
-    .pill-green { background: #e6f4ea; color: #1e7e34; }
-    .pill-blue  { background: #e8f0fe; color: #1a56c4; }
-
-    /* ── Chat card ─────────────────────────────────────────────────── */
-    .chat-card {
-      flex: 1;
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.05);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .chat-card-header {
-      padding: 14px 20px;
-      border-bottom: 1px solid #eef0f4;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .chat-card-header .dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: #34c759;
-      box-shadow: 0 0 0 2px #e6f9ec;
-    }
-    .chat-card-header span {
-      font-size: 13.5px;
-      font-weight: 600;
-      color: #0f2044;
-    }
-    .chat-card-header small {
-      font-size: 12px;
-      color: #9aa3b8;
-      margin-left: 4px;
-    }
-
-    .messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
+      justify-content: center;
       gap: 14px;
     }
-    .messages::-webkit-scrollbar { width: 4px; }
-    .messages::-webkit-scrollbar-thumb { background: #dde1ea; border-radius: 4px; }
 
-    .msg-row {
+    /* ── Cosmic Ball ── */
+    .orb-wrap {
+      flex-shrink: 0;
+      margin-bottom: 0;
+      position: relative;
+      width: 120px;
+      height: 120px;
       display: flex;
-      gap: 10px;
-      align-items: flex-end;
+      align-items: center;
+      justify-content: center;
     }
+
+    .orb-core {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%,
+        #f0d0ff 0%,
+        #c084fc 22%,
+        #a855f7 45%,
+        #7c3aed 68%,
+        #3b0764 100%
+      );
+      box-shadow:
+        0 0 30px rgba(168, 85, 247, 0.8),
+        0 0 70px rgba(168, 85, 247, 0.5),
+        0 0 120px rgba(236, 72, 153, 0.3);
+      position: relative;
+      z-index: 2;
+      animation: orb-pulse 4s ease-in-out infinite;
+    }
+
+    @keyframes orb-pulse {
+      0%, 100% {
+        box-shadow:
+          0 0 30px rgba(168, 85, 247, 0.75),
+          0 0 70px rgba(168, 85, 247, 0.45),
+          0 0 120px rgba(236, 72, 153, 0.25);
+        transform: scale(1);
+      }
+      50% {
+        box-shadow:
+          0 0 40px rgba(168, 85, 247, 1),
+          0 0 100px rgba(168, 85, 247, 0.65),
+          0 0 160px rgba(236, 72, 153, 0.45);
+        transform: scale(1.05);
+      }
+    }
+
+    .orb-core::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background-image:
+        radial-gradient(1.5px 1.5px at 20% 25%, rgba(255,255,255,0.95) 0%, transparent 100%),
+        radial-gradient(1px 1px at 65% 18%, rgba(255,255,255,0.8) 0%, transparent 100%),
+        radial-gradient(1.2px 1.2px at 78% 55%, rgba(255,255,255,0.85) 0%, transparent 100%),
+        radial-gradient(1px 1px at 35% 70%, rgba(255,255,255,0.7) 0%, transparent 100%),
+        radial-gradient(0.8px 0.8px at 55% 42%, rgba(255,255,255,0.9) 0%, transparent 100%),
+        radial-gradient(1px 1px at 15% 58%, rgba(255,255,255,0.65) 0%, transparent 100%),
+        radial-gradient(0.7px 0.7px at 70% 30%, rgba(255,255,255,0.75) 0%, transparent 100%),
+        radial-gradient(1px 1px at 48% 82%, rgba(255,255,255,0.55) 0%, transparent 100%);
+    }
+
+    .haze {
+      position: absolute;
+      border-radius: 50%;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    .haze-1 {
+      width: 82px; height: 82px;
+      background: conic-gradient(
+        from 0deg,
+        transparent 0%, rgba(168,85,247,0.55) 18%, rgba(236,72,153,0.4) 38%,
+        transparent 52%, rgba(99,102,241,0.45) 72%, transparent 100%
+      );
+      animation: spin-cw 6s linear infinite;
+      filter: blur(10px);
+    }
+    .haze-2 {
+      width: 104px; height: 104px;
+      background: conic-gradient(
+        from 120deg,
+        transparent 0%, rgba(236,72,153,0.4) 22%, rgba(168,85,247,0.5) 48%,
+        transparent 62%, rgba(139,92,246,0.3) 82%, transparent 100%
+      );
+      animation: spin-ccw 9s linear infinite;
+      filter: blur(16px);
+    }
+    .haze-3 {
+      width: 126px; height: 126px;
+      background: conic-gradient(
+        from 240deg,
+        transparent 0%, rgba(99,102,241,0.3) 28%, rgba(236,72,153,0.22) 52%,
+        transparent 68%, rgba(168,85,247,0.28) 86%, transparent 100%
+      );
+      animation: spin-cw 14s linear infinite;
+      filter: blur(22px);
+    }
+
+    .arc {
+      position: absolute;
+      top: 50%; left: 50%;
+      border-radius: 50%;
+      border: 1px solid transparent;
+      transform: translate(-50%, -50%);
+    }
+    .arc-1 {
+      width: 82px; height: 82px;
+      border-top-color: rgba(168,85,247,0.7);
+      border-left-color: rgba(236,72,153,0.45);
+      animation: spin-cw 4s linear infinite;
+    }
+    .arc-2 {
+      width: 100px; height: 100px;
+      border-bottom-color: rgba(236,72,153,0.6);
+      border-right-color: rgba(99,102,241,0.4);
+      animation: spin-ccw 7s linear infinite;
+    }
+    .arc-3 {
+      width: 118px; height: 118px;
+      border-top-color: rgba(99,102,241,0.4);
+      border-right-color: rgba(168,85,247,0.3);
+      animation: spin-cw 11s linear infinite;
+    }
+
+    @keyframes spin-cw  { from { transform: translate(-50%,-50%) rotate(0deg);   } to { transform: translate(-50%,-50%) rotate(360deg);  } }
+    @keyframes spin-ccw { from { transform: translate(-50%,-50%) rotate(0deg);   } to { transform: translate(-50%,-50%) rotate(-360deg); } }
+
+    /* ── Heading ── */
+    .heading { text-align: center; flex-shrink: 0; }
+    .heading h1 { font-size: 18px; font-weight: 700; color: #3b1a5e; letter-spacing: -0.3px; }
+    .heading p  { margin-top: 5px; font-size: 12px; color: #8b5aaa; line-height: 1.5; }
+
+    /* ── Chat card ── */
+    .chat-card {
+      flex: 1;
+      background: rgba(255,255,255,0.55);
+      backdrop-filter: blur(16px);
+      border-radius: 16px;
+      border: 1px solid rgba(168,85,247,0.15);
+      box-shadow: 0 2px 8px rgba(120,0,120,0.08), 0 8px 32px rgba(180,80,180,0.1);
+      display: flex; flex-direction: column;
+      overflow: hidden; min-height: 0;
+    }
+
+    /* ── Messages ── */
+    .messages {
+      flex: 1; overflow-y: auto;
+      padding: 22px 24px;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .messages::-webkit-scrollbar { width: 4px; }
+    .messages::-webkit-scrollbar-thumb { background: rgba(168,85,247,0.25); border-radius: 4px; }
+
+    .msg-row { display: flex; gap: 10px; align-items: flex-end; }
     .msg-row.user { flex-direction: row-reverse; }
 
     .msg-avatar {
-      width: 28px; height: 28px;
-      border-radius: 50%;
+      width: 28px; height: 28px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      font-size: 11px; font-weight: 700;
-      flex-shrink: 0;
+      font-size: 11px; font-weight: 700; flex-shrink: 0;
     }
-    .msg-avatar.agent-av { background: #e8f0fe; color: #1a56c4; }
-    .msg-avatar.user-av  { background: #0f2044; color: #90b8e8; }
+    .msg-avatar.agent-av { background: #ede9fe; color: #7c3aed; }
+    .msg-avatar.user-av  { background: var(--navy); color: #90b8e8; }
 
     .message {
-      max-width: 72%;
-      padding: 10px 14px;
-      border-radius: 16px;
-      font-size: 13.5px;
-      line-height: 1.55;
-      white-space: pre-wrap;
-      word-break: break-word;
+      max-width: 74%; padding: 10px 15px; border-radius: 18px;
+      font-size: 13.5px; line-height: 1.6;
+      white-space: pre-wrap; word-break: break-word;
     }
     .msg-row.agent .message {
-      background: #f4f6f9;
-      color: #1a1a2e;
+      background: rgba(255,255,255,0.75);
+      color: #2d1a4a;
       border-bottom-left-radius: 4px;
     }
+    /* ── User bubble color — edit #9333ea (purple) and #ec4899 (pink) to change ── */
     .msg-row.user .message {
-      background: var(--accent);
+      background: linear-gradient(135deg, #9333ea, #ec4899);
       color: #fff;
       border-bottom-right-radius: 4px;
+      box-shadow: 0 2px 12px rgba(168,85,247,0.4), 0 4px 24px rgba(236,72,153,0.25);
     }
     .msg-row.error .message {
-      background: #fff0f0;
+      background: rgba(255,80,80,0.1);
       color: #c0392b;
       border-bottom-left-radius: 4px;
     }
-
     .typing .message {
-      background: #f4f6f9;
-      color: #9aa3b8;
-      font-size: 18px;
-      letter-spacing: 3px;
-      padding: 8px 16px;
+      background: rgba(255,255,255,0.6);
+      color: #a855c8;
+      font-size: 18px; letter-spacing: 4px; padding: 8px 16px;
     }
 
+    /* ── Input ── */
     .input-area {
-      display: flex;
-      gap: 10px;
-      padding: 14px 20px;
-      border-top: 1px solid #eef0f4;
+      display: flex; gap: 10px;
+      padding: 14px 18px;
+      border-top: 1px solid rgba(168,85,247,0.15);
+      background: rgba(255,255,255,0.4);
     }
-
     #user-input {
-      flex: 1;
-      padding: 10px 16px;
-      border: 1px solid #dde1ea;
-      border-radius: 24px;
-      font-size: 13.5px;
-      outline: none;
-      resize: none;
-      font-family: inherit;
-      line-height: 1.4;
-      max-height: 100px;
-      overflow-y: auto;
-      background: #f8f9fc;
-      color: #1a1a2e;
+      flex: 1; padding: 10px 16px;
+      border: 1.5px solid rgba(168,85,247,0.3); border-radius: 24px;
+      font-size: 13.5px; outline: none; resize: none;
+      font-family: inherit; line-height: 1.45;
+      max-height: 120px; overflow-y: auto;
+      background: rgba(255,255,255,0.7); color: #2d1a4a;
       transition: border-color 0.15s, background 0.15s;
     }
-    #user-input:focus { border-color: var(--accent); background: #fff; }
-    #user-input::placeholder { color: #b0b8cc; }
+    #user-input:focus { border-color: #a855f7; background: rgba(255,255,255,0.9); }
+    #user-input::placeholder { color: rgba(139,90,170,0.5); }
 
     #send-btn {
       padding: 10px 22px;
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 24px;
-      font-size: 13.5px;
+      background: linear-gradient(135deg, #7c3aed, #db2777);
+      color: #fff; border: none; border-radius: 24px;
+      font-size: 13.5px; font-weight: 600; cursor: pointer;
+      white-space: nowrap; display: flex; align-items: center; gap: 6px;
+      transition: opacity 0.15s; flex-shrink: 0;
+    }
+    #send-btn:hover    { opacity: 0.88; }
+    #send-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* ── Attach button ── */
+    #attach-btn {
+      padding: 10px 12px;
+      background: rgba(168,85,247,0.08);
+      color: #7c3aed; border: 1.5px solid rgba(168,85,247,0.25);
+      border-radius: 24px; cursor: pointer;
+      font-size: 15px; line-height: 1;
+      transition: background 0.15s; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #attach-btn:hover { background: rgba(168,85,247,0.16); }
+    #attach-btn.has-doc { background: rgba(168,85,247,0.2); border-color: #a855f7; }
+
+    /* ── Doc chip bar ── */
+    .doc-chip-bar {
+      padding: 6px 18px;
+      background: rgba(168,85,247,0.06);
+      border-top: 1px solid rgba(168,85,247,0.12);
+      display: flex; align-items: center; gap: 7px;
+      font-size: 12px; color: #6b2d9e;
+      flex-shrink: 0;
+    }
+    .doc-chip-bar span { font-weight: 600; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .doc-clear-btn {
+      background: none; border: none; cursor: pointer;
+      color: #a855f7; font-size: 15px; line-height: 1;
+      padding: 0 3px; border-radius: 4px;
+      transition: background 0.15s; flex-shrink: 0;
+    }
+    .doc-clear-btn:hover { background: rgba(168,85,247,0.12); }
+
+    /* ── Doc context label (shown under user bubble) ── */
+    .doc-context-label {
+      display: flex;
+      justify-content: flex-end;
+      padding-right: 38px;
+      margin-top: -6px;
+    }
+    .doc-context-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11.5px;
       font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap;
-      display: flex; align-items: center; gap: 6px;
+      color: #7c3aed;
+      background: rgba(168,85,247,0.13);
+      border: 1.5px solid rgba(168,85,247,0.3);
+      border-radius: 20px;
+      padding: 3px 10px 3px 8px;
+      letter-spacing: 0.1px;
+    }
+
+    /* ── Inline form card ── */
+    .form-card {
+      max-width: 74%;
+      background: rgba(255,255,255,0.88);
+      border: 1.5px solid rgba(168,85,247,0.25);
+      border-radius: 14px;
+      padding: 18px 20px 14px;
+      box-shadow: 0 2px 14px rgba(168,85,247,0.12);
+    }
+    .form-card-title {
+      font-size: 12.5px; font-weight: 700; color: #7c3aed;
+      margin-bottom: 14px; display: flex; align-items: center; gap: 6px;
+    }
+    .form-field { margin-bottom: 11px; }
+    .form-field label {
+      display: block; font-size: 11px; font-weight: 600;
+      color: #6b2d9e; margin-bottom: 4px; letter-spacing: 0.2px;
+    }
+    .form-field input, .form-field select {
+      width: 100%; padding: 7px 11px;
+      border: 1.5px solid rgba(168,85,247,0.22); border-radius: 8px;
+      font-size: 13px; font-family: inherit; color: #2d1a4a;
+      background: rgba(255,255,255,0.9); outline: none;
+      transition: border-color 0.15s;
+    }
+    .form-field input:focus, .form-field select:focus { border-color: #a855f7; }
+    .form-actions {
+      display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px;
+    }
+    .form-cancel-btn {
+      padding: 7px 15px;
+      border: 1.5px solid rgba(168,85,247,0.3); border-radius: 20px;
+      background: transparent; color: #7c3aed;
+      font-size: 12px; font-weight: 600; cursor: pointer;
       transition: background 0.15s;
     }
-    #send-btn:hover    { background: var(--accent-h); }
-    #send-btn:disabled { background: #c5cad8; cursor: not-allowed; }
+    .form-cancel-btn:hover { background: rgba(168,85,247,0.07); }
+    .form-submit-btn {
+      padding: 7px 18px;
+      background: linear-gradient(135deg, #7c3aed, #db2777);
+      color: #fff; border: none; border-radius: 20px;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .form-submit-btn:hover { opacity: 0.88; }
   </style>
 </head>
 <body>
 
-  <!-- ── Top header ── -->
-  <header class="top-header">
+  <div class="bg-blobs">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div class="blob blob-4"></div>
+  </div>
+
+  <header class="header">
     <div class="logo-mark">ATS</div>
     <div class="logo-text">Transfer<span>Portal</span></div>
-    <div class="header-divider"></div>
-    <div class="header-badge">US-East Region</div>
-    <div class="header-avatar">JD</div>
+    <div class="header-spacer"></div>
+    <div class="status-dot">Agent Online</div>
   </header>
 
-  <div class="body-wrap">
+  <div class="center">
 
-    <!-- ── Sidebar ── -->
-    <nav class="sidebar">
-
-      <div class="nav-section-label">Main</div>
-
-      <div class="nav-item">
-        <!-- Dashboard -->
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-        Dashboard
+    <div class="left-panel">
+      <div class="orb-wrap">
+        <div class="haze-3 haze"></div>
+        <div class="haze-2 haze"></div>
+        <div class="haze-1 haze"></div>
+        <div class="arc arc-3"></div>
+        <div class="arc arc-2"></div>
+        <div class="arc arc-1"></div>
+        <div class="orb-core"></div>
       </div>
-
-      <div class="nav-item active">
-        <!-- AI Assistant -->
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        AI Assistant
+      <div class="heading">
+        <h1>Agent Transfer Assistant</h1>
+        <p>Create transfers, check status, and manage agent contracts</p>
       </div>
+    </div>
 
-      <div class="nav-section-label">Transfers</div>
-
-      <div class="nav-item">
-        <!-- New Transfer -->
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-        New Transfer
-      </div>
-
-      <div class="nav-item">
-        <!-- All Transfers -->
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-        All Transfers
-        <span class="nav-badge">12</span>
-      </div>
-
-      <div class="nav-item">
-        <!-- Pending -->
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        Pending Review
-        <span class="nav-badge">3</span>
-      </div>
-
-      <div class="nav-section-label">Directory</div>
-
-      <div class="nav-item">
-        <!-- Agents -->
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        Agents
-      </div>
-
-      <div class="nav-item">
-        <!-- IMOs -->
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-        IMOs
-      </div>
-
-      <div class="nav-section-label">Reports</div>
-
-      <div class="nav-item">
-        <!-- Analytics -->
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        Analytics
-      </div>
-
-      <div class="nav-item">
-        <!-- Audit Log -->
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        Audit Log
-      </div>
-
-      <div class="nav-section-label">System</div>
-
-      <div class="nav-item">
-        <!-- Settings -->
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        Settings
-      </div>
-
-      <div class="sidebar-footer">
-        <div class="sidebar-user">
-          <div class="sidebar-user-avatar">JD</div>
-          <div>
-            <div class="sidebar-user-name">Jane Doe</div>
-            <div class="sidebar-user-role">Transfer Admin</div>
-          </div>
+    <div class="chat-card">
+      <div class="messages" id="messages">
+        <div class="msg-row agent">
+          <div class="msg-avatar agent-av">AI</div>
+          <div class="message">Hi! I can help you create, view, and manage agent transfers between IMOs. What would you like to do today?</div>
         </div>
       </div>
 
-    </nav>
-
-    <!-- ── Main content ── -->
-    <main class="main">
-
-      <div class="page-title">
-        <div>
-          <h2>AI Transfer Assistant</h2>
-          <p>Chat with the assistant to create and manage agent transfers</p>
-        </div>
-        <div class="status-pills">
-          <span class="pill pill-green">● Agent Online</span>
-          <span class="pill pill-blue">ATS API Connected</span>
-        </div>
+      <div class="doc-chip-bar" id="doc-chip-bar" style="display:none">
+        📄 <span id="doc-name"></span>
+        <button class="doc-clear-btn" id="clear-doc-btn" title="Remove document">×</button>
       </div>
 
-      <div class="chat-card">
-        <div class="chat-card-header">
-          <div class="dot"></div>
-          <span>Transfer Assistant</span>
-          <small>Powered by Amazon Bedrock</small>
-        </div>
-
-        <div class="messages" id="messages">
-          <div class="msg-row agent">
-            <div class="msg-avatar agent-av">AI</div>
-            <div class="message">Hi! I can help you create, view, and manage agent transfers between IMOs. What would you like to do today?</div>
-          </div>
-        </div>
-
-        <div class="input-area">
-          <textarea id="user-input" rows="1" placeholder="Ask me to create a transfer, check status, or cancel a request…"></textarea>
-          <button id="send-btn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-            Send
-          </button>
-        </div>
+      <div class="input-area">
+        <input type="file" id="file-input" accept=".docx,.txt" style="display:none">
+        <button id="attach-btn" title="Attach a .docx or .txt document">📎</button>
+        <textarea id="user-input" rows="1" placeholder="Ask me to create a transfer, check status, or look up an agent…"></textarea>
+        <button id="send-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+          Send
+        </button>
       </div>
+    </div>
 
-    </main>
   </div>
 
   <script>
-    const messagesEl = document.getElementById('messages');
-    const inputEl    = document.getElementById('user-input');
-    const sendBtn    = document.getElementById('send-btn');
+    const messagesEl  = document.getElementById('messages');
+    const inputEl     = document.getElementById('user-input');
+    const sendBtn     = document.getElementById('send-btn');
+    const attachBtn   = document.getElementById('attach-btn');
+    const fileInput   = document.getElementById('file-input');
+    const docChipBar  = document.getElementById('doc-chip-bar');
+    const docNameEl   = document.getElementById('doc-name');
+    const clearDocBtn = document.getElementById('clear-doc-btn');
 
-    function scrollToBottom() {
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-    }
+    // ── Document upload ──────────────────────────────────────
+    attachBtn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', async () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+      fileInput.value = '';
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      attachBtn.disabled = true;
+      try {
+        const res  = await fetch('/upload', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.error) {
+          addMessage('Could not attach document: ' + data.error, 'error');
+          return;
+        }
+        docNameEl.textContent = data.filename + (data.truncated ? ' (truncated)' : '');
+        docChipBar.style.display = 'flex';
+        attachBtn.classList.add('has-doc');
+      } catch (err) {
+        addMessage('Upload failed — please try again.', 'error');
+      } finally {
+        attachBtn.disabled = false;
+      }
+    });
+
+    clearDocBtn.addEventListener('click', async () => {
+      await fetch('/clear-doc', { method: 'POST' });
+      docChipBar.style.display = 'none';
+      docNameEl.textContent = '';
+      attachBtn.classList.remove('has-doc');
+    });
+
+    function scrollToBottom() { messagesEl.scrollTop = messagesEl.scrollHeight; }
 
     function addMessage(text, role) {
       const row = document.createElement('div');
@@ -511,13 +600,94 @@
       if (role === 'user') {
         const av = document.createElement('div');
         av.className = 'msg-avatar user-av';
-        av.textContent = 'JD';
+        av.textContent = 'ME';
         row.appendChild(av);
       }
 
       messagesEl.appendChild(row);
       scrollToBottom();
       return row;
+    }
+
+    function addFormCard(formSpec) {
+      const row = document.createElement('div');
+      row.className = 'msg-row agent';
+
+      const av = document.createElement('div');
+      av.className = 'msg-avatar agent-av';
+      av.textContent = 'AI';
+      row.appendChild(av);
+
+      const card = document.createElement('div');
+      card.className = 'form-card';
+
+      const title = document.createElement('div');
+      title.className = 'form-card-title';
+      title.textContent = '📋 ' + (formSpec.title || 'Form');
+      card.appendChild(title);
+
+      const fields = formSpec.fields || [];
+      const inputs = {};
+
+      fields.forEach(field => {
+        const fieldDiv = document.createElement('div');
+        fieldDiv.className = 'form-field';
+
+        const label = document.createElement('label');
+        label.textContent = field.label + (field.required ? ' *' : '');
+        fieldDiv.appendChild(label);
+
+        let input;
+        if (field.type === 'select' && field.options) {
+          input = document.createElement('select');
+          const blank = document.createElement('option');
+          blank.value = ''; blank.textContent = '— select —';
+          input.appendChild(blank);
+          field.options.forEach(opt => {
+            const o = document.createElement('option');
+            o.value = opt; o.textContent = opt;
+            input.appendChild(o);
+          });
+        } else {
+          input = document.createElement('input');
+          input.type = field.type || 'text';
+          if (field.placeholder) input.placeholder = field.placeholder;
+        }
+        inputs[field.key] = { input, field };
+        fieldDiv.appendChild(input);
+        card.appendChild(fieldDiv);
+      });
+
+      const actions = document.createElement('div');
+      actions.className = 'form-actions';
+
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'form-cancel-btn';
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.onclick = () => messagesEl.removeChild(row);
+
+      const submitBtn = document.createElement('button');
+      submitBtn.className = 'form-submit-btn';
+      submitBtn.textContent = 'Submit ▶';
+      submitBtn.onclick = () => {
+        const parts = fields
+          .map(f => {
+            const val = inputs[f.key].input.value.trim();
+            return val ? `${f.label}: ${val}` : null;
+          })
+          .filter(Boolean);
+        if (parts.length === 0) return;
+        messagesEl.removeChild(row);
+        inputEl.value = parts.join(', ');
+        sendMessage();
+      };
+
+      actions.appendChild(cancelBtn);
+      actions.appendChild(submitBtn);
+      card.appendChild(actions);
+      row.appendChild(card);
+      messagesEl.appendChild(row);
+      scrollToBottom();
     }
 
     async function sendMessage() {
@@ -528,6 +698,25 @@
       inputEl.style.height = 'auto';
       sendBtn.disabled = true;
       addMessage(text, 'user');
+
+      // If a document is attached, show a pill under the user bubble then auto-clear
+      const attachedDoc = docChipBar.style.display !== 'none' ? docNameEl.textContent : null;
+      if (attachedDoc) {
+        const label = document.createElement('div');
+        label.className = 'doc-context-label';
+        const pill = document.createElement('span');
+        pill.className = 'doc-context-pill';
+        pill.textContent = '📄 ' + attachedDoc;
+        label.appendChild(pill);
+        messagesEl.appendChild(label);
+        scrollToBottom();
+
+        // Auto-remove the doc so it only applies to this one message
+        fetch('/clear-doc', { method: 'POST' });
+        docChipBar.style.display = 'none';
+        docNameEl.textContent = '';
+        attachBtn.classList.remove('has-doc');
+      }
 
       const typingRow = document.createElement('div');
       typingRow.className = 'msg-row agent typing';
@@ -551,6 +740,7 @@
         const data = await res.json();
         messagesEl.removeChild(typingRow);
         addMessage(data.error ? 'Error: ' + data.error : data.reply, data.error ? 'error' : 'agent');
+        if (data.form) addFormCard(data.form);
       } catch (err) {
         messagesEl.removeChild(typingRow);
         addMessage('Network error — please try again.', 'error');
