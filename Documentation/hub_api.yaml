@@ -1,0 +1,574 @@
+openapi: 3.0.3
+info:
+  title: Agent Transfer Standard (ATS) API
+  description: >
+    API for managing agent transfers between IMOs and carriers,
+    including status tracking and contract reassignment.
+  version: 1.0.0
+servers:
+  - url: https://21yem0s5jl.execute-api.us-east-1.amazonaws.com/prod
+    description: Production
+
+tags:
+  - name: Transfers
+    description: Agent transfer lifecycle management
+  - name: Status
+    description: Carrier-level transfer status tracking
+  - name: Contracts
+    description: Agent contract management
+
+paths:
+
+  # ─── Transfers ────────────────────────────────────────────────────────────
+
+  /ats/v1/transfers:
+    get:
+      tags: [Transfers]
+      summary: List transfers
+      description: Returns transfers with optional filters. Currently returns an empty list (not yet implemented).
+      parameters:
+        - name: npn
+          in: query
+          description: Filter by agent National Producer Number
+          schema:
+            type: string
+        - name: state
+          in: query
+          description: Filter by transfer state
+          schema:
+            type: string
+            enum: [SUBMITTED, VALIDATION, PROCESSING, COMPLETED, REJECTED, WITHDRAWN]
+        - name: limit
+          in: query
+          description: Maximum number of results (default 25, max 100)
+          schema:
+            type: integer
+            default: 25
+            minimum: 1
+            maximum: 100
+      responses:
+        "200":
+          description: List of transfers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TransferBody"
+
+    post:
+      tags: [Transfers]
+      summary: Create a transfer
+      description: >
+        Creates a new agent transfer, stores it in DynamoDB, forwards it to
+        carrier APIs (Allianz, American Equity), and sets status to INITIATED
+        for each successful forward.
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          description: Optional key to safely retry without creating duplicates
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTransferRequest"
+            example:
+              agent:
+                npn: "17439285"
+                firstName: Jordan
+                lastName: Lee
+              releasingImo:
+                fein: "13-3456789"
+                name: Acme IMO
+              receivingImo:
+                fein: "99-7654321"
+                name: Summit IMO
+              effectiveDate: "2026-03-01"
+              consent:
+                agentAttestation: true
+                eSignatureRef: esig_abc123
+              notes: Please process before month-end.
+      responses:
+        "201":
+          description: Transfer created
+          headers:
+            Location:
+              description: Path to the created transfer
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateTransferResponse"
+        "500":
+          description: Internal error (includes step and message)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StepError"
+
+  /ats/v1/transfers/{id}:
+    get:
+      tags: [Transfers]
+      summary: Get transfers by releasing FEIN
+      description: Returns all transfers where the releasing IMO FEIN matches the provided id.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Releasing IMO FEIN
+          schema:
+            type: string
+          example: "13-3456789"
+      responses:
+        "200":
+          description: List of matching transfers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TransferBody"
+        "400":
+          description: Missing FEIN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CodeError"
+
+    patch:
+      tags: [Transfers]
+      summary: Cancel or add a note to a transfer
+      description: Apply an action (CANCEL or ADD_NOTE) to an existing transfer. Not yet implemented.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Transfer ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchTransferRequest"
+      responses:
+        "200":
+          description: Transfer updated
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /ats/v1/transfers/{id}/release:
+    post:
+      tags: [Transfers]
+      summary: Release a transfer to carriers
+      description: >
+        Fetches a transfer by ID from DynamoDB, forwards it to all carrier APIs,
+        and updates the carrier status to RELEASED for each successful forward.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: >
+            Transfer ID in the format `{receivingFein}|{releasingFein}|{npn}`.
+            URL-encode the pipe characters (%7C) when calling from curl.
+          schema:
+            type: string
+          example: "99-7654321%7C13-3456789%7C17439285"
+      responses:
+        "200":
+          description: Transfer released (may include warnings for partial failures)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReleaseTransferResponse"
+        "400":
+          description: Missing transfer ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CodeError"
+        "404":
+          description: Transfer not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CodeError"
+
+  # ─── Status ───────────────────────────────────────────────────────────────
+
+  /ats/v1/status:
+    post:
+      tags: [Status]
+      summary: Set carrier status
+      description: >
+        Creates or overwrites a status record for a carrier/agent/FEIN combination.
+        When status is COMPLETED, automatically triggers a contract FEIN update.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetStatusRequest"
+            example:
+              receivingFein: "99-7654321"
+              releasingFein: "13-3456789"
+              carrierId: allianz
+              status: INITIATED
+              npn: "17439285"
+      responses:
+        "200":
+          description: Status set successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusRecord"
+        "400":
+          description: Missing required fields or invalid status value
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CodeError"
+
+  /ats/v1/status/{fein}:
+    get:
+      tags: [Status]
+      summary: Get statuses for a receiving FEIN
+      description: Returns all carrier status records for the given receiving IMO FEIN, enriched with agent name.
+      parameters:
+        - name: fein
+          in: path
+          required: true
+          description: Receiving IMO FEIN
+          schema:
+            type: string
+          example: "99-7654321"
+      responses:
+        "200":
+          description: List of status records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StatusRecordEnriched"
+        "400":
+          description: Missing FEIN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CodeError"
+
+  # ─── Contracts ────────────────────────────────────────────────────────────
+
+  /ats/v1/contracts/{fein}:
+    get:
+      tags: [Contracts]
+      summary: Get contracts for a FEIN
+      description: Returns all contracts where the FEIN matches, enriched with agent name.
+      parameters:
+        - name: fein
+          in: path
+          required: true
+          description: IMO FEIN
+          schema:
+            type: string
+          example: "13-3456789"
+      responses:
+        "200":
+          description: List of contracts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ContractRecord"
+        "400":
+          description: Missing FEIN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CodeError"
+
+  /ats/v1/contracts/update-fein:
+    post:
+      tags: [Contracts]
+      summary: Update contract FEINs
+      description: >
+        Finds all contracts matching the given carrierId, npn, and releasingFein,
+        then updates their FEIN to the receivingFein. Called automatically when
+        a status transitions to COMPLETED.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateContractsFeinRequest"
+            example:
+              carrierId: allianz
+              npn: "17439285"
+              releasingFein: "13-3456789"
+              receivingFein: "99-7654321"
+      responses:
+        "200":
+          description: Contracts updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  updatedCount:
+                    type: integer
+                    description: Number of contracts updated
+        "400":
+          description: Missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CodeError"
+
+# ─── Components ─────────────────────────────────────────────────────────────
+
+components:
+  schemas:
+
+    Agent:
+      type: object
+      required: [npn]
+      properties:
+        npn:
+          type: string
+          description: National Producer Number
+        firstName:
+          type: string
+        lastName:
+          type: string
+
+    Imo:
+      type: object
+      required: [fein, name]
+      properties:
+        fein:
+          type: string
+          description: Business Federal Employer Identification Number
+        name:
+          type: string
+
+    Consent:
+      type: object
+      required: [agentAttestation]
+      properties:
+        agentAttestation:
+          type: boolean
+          description: True if the agent has authorized this transfer
+        eSignatureRef:
+          type: string
+          description: Reference to the e-signature artifact
+
+    TransferBody:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Transfer ID ({receivingFein}|{releasingFein}|{npn})
+        agent:
+          $ref: "#/components/schemas/Agent"
+        releasingImo:
+          $ref: "#/components/schemas/Imo"
+        receivingImo:
+          $ref: "#/components/schemas/Imo"
+        effectiveDate:
+          type: string
+          format: date
+          description: Target date for hierarchy/commission realignment (YYYY-MM-DD)
+        consent:
+          $ref: "#/components/schemas/Consent"
+        notes:
+          type: string
+          description: Free text for carrier processing (max 2000 chars)
+
+    CreateTransferRequest:
+      type: object
+      required: [agent, releasingImo, receivingImo, effectiveDate, consent]
+      properties:
+        agent:
+          $ref: "#/components/schemas/Agent"
+        releasingImo:
+          $ref: "#/components/schemas/Imo"
+        receivingImo:
+          $ref: "#/components/schemas/Imo"
+        effectiveDate:
+          type: string
+          format: date
+        consent:
+          $ref: "#/components/schemas/Consent"
+        notes:
+          type: string
+
+    CreateTransferResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Transfer ID ({receivingFein}|{releasingFein}|{npn})
+        state:
+          type: string
+          example: SUBMITTED
+        warnings:
+          type: object
+          description: Per-carrier set_status failures (non-fatal)
+          additionalProperties:
+            type: string
+
+    ReleaseTransferResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        warnings:
+          type: object
+          description: Per-carrier forward failures (present only on partial failure)
+          additionalProperties:
+            type: string
+
+    PatchTransferRequest:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [CANCEL, ADD_NOTE]
+        note:
+          type: string
+          description: Required when action is ADD_NOTE
+        reason:
+          type: string
+          description: Human-readable reason (e.g. for CANCEL)
+
+    SetStatusRequest:
+      type: object
+      required: [receivingFein, releasingFein, carrierId, status, npn]
+      properties:
+        receivingFein:
+          type: string
+        releasingFein:
+          type: string
+        carrierId:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, COMPLETED, CANCELED, REJECTED, INITIATED, RELEASED]
+        npn:
+          type: string
+        requirements:
+          type: array
+          description: Optional list of carrier requirements
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+              status:
+                type: string
+              details:
+                type: string
+
+    StatusRecord:
+      type: object
+      properties:
+        receivingFein:
+          type: string
+        releasingFein:
+          type: string
+        carrierId:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, COMPLETED, CANCELED, REJECTED, INITIATED, RELEASED]
+        npn:
+          type: string
+        requirements:
+          type: array
+          nullable: true
+          items:
+            type: object
+
+    StatusRecordEnriched:
+      allOf:
+        - $ref: "#/components/schemas/StatusRecord"
+        - type: object
+          properties:
+            agentFirstName:
+              type: string
+              nullable: true
+            agentLastName:
+              type: string
+              nullable: true
+
+    ContractRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        contractNumber:
+          type: string
+        carrierId:
+          type: string
+        fein:
+          type: string
+        npn:
+          type: string
+        contractType:
+          type: string
+        contractValue:
+          type: string
+        issueDate:
+          type: string
+          format: date
+        agentFirstName:
+          type: string
+          nullable: true
+        agentLastName:
+          type: string
+          nullable: true
+
+    UpdateContractsFeinRequest:
+      type: object
+      required: [carrierId, npn, releasingFein, receivingFein]
+      properties:
+        carrierId:
+          type: string
+        npn:
+          type: string
+        releasingFein:
+          type: string
+        receivingFein:
+          type: string
+
+    CodeError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+
+    StepError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            step:
+              type: string
+            message:
+              type: string
